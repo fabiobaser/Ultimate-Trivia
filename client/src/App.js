@@ -17,7 +17,9 @@ export default class App extends Component {
   }
 
   connectToHub = () => {
-    const connection = new HubConnectionBuilder().withUrl("/").build()
+    const connection = new HubConnectionBuilder()
+      .withUrl("http://localhost:5000")
+      .build()
 
     connection.on("send", (data) => {
       console.log(data)
