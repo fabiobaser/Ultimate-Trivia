@@ -26,6 +26,12 @@ namespace Trivia
         {
             services.AddSingleton<LobbyManager>();
 
+            services.AddCors(options =>
+                options.AddDefaultPolicy(builder => 
+                    builder
+                        .WithOrigins("http://localhost:1234")
+                        .AllowCredentials()));
+            
             services.AddUtils();
             services.AddHttpContextAccessor();
 
