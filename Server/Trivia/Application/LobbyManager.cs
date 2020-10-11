@@ -14,14 +14,16 @@ namespace Trivia.Application
         private readonly IInviteCodeGenerator _inviteCodeGenerator;
         private readonly UserManager _userManager;
         private readonly IHubContext<TrivialGameHub> _hubContext;
+        private readonly IJsonSerializer _jsonSerializer;
         private readonly ConcurrentDictionary<string, Lobby> _lobbies;
 
-        public LobbyManager(IInviteCodeGenerator inviteCodeGenerator, UserManager userManager, IHubContext<TrivialGameHub> hubContext)
+        public LobbyManager(IInviteCodeGenerator inviteCodeGenerator, UserManager userManager, IHubContext<TrivialGameHub> hubContext, IJsonSerializer jsonSerializer)
         {
             _inviteCodeGenerator = inviteCodeGenerator;
             _userManager = userManager;
             _hubContext = hubContext;
-            
+            _jsonSerializer = jsonSerializer;
+
             _lobbies = new ConcurrentDictionary<string, Lobby>();
         }
 
@@ -54,7 +56,10 @@ namespace Trivia.Application
 
             _userManager.JoinLobby(connectionId, lobbyId);
 
-            await _hubContext.Clients.Group(lobbyId).SendAsync(ClientCallNames.UserJoinedLobby, username);
+            var usersInLobby = _userManager.GetUsersInLobby(lobbyId);
+            var serializedUsers = _jsonSerializer.Serialize(usersInLobby.Select(u => u.Name));
+            
+            await _hubContext.Clients.Group(lobbyId).SendAsync(ClientCallNames.UserJoinedLobby, username, serializedUsers);
         }
 
         public async Task LeaveLobbyAsync(string connectionId)
@@ -63,7 +68,10 @@ namespace Trivia.Application
             var leftLobbyId = user.LobbyId;
             _userManager.LeaveLobby(connectionId);
             
-            await _hubContext.Clients.Group(leftLobbyId).SendAsync(ClientCallNames.UserLeftLobby, user.Name);
+            var usersInLobby = _userManager.GetUsersInLobby(leftLobbyId);
+            var serializedUsers = _jsonSerializer.Serialize(usersInLobby.Select(u => u.Name));
+            
+            await _hubContext.Clients.Group(leftLobbyId).SendAsync(ClientCallNames.UserLeftLobby, user.Name, serializedUsers);
         }
     }
 }
