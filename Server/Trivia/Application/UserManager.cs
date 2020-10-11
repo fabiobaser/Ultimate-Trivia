@@ -13,6 +13,11 @@ namespace Trivia.Application
         {
             Users = new ConcurrentDictionary<string, User>();
         }
+
+        public List<User> GetAllUsers()
+        {
+            return Users.Select(u => u.Value).ToList();
+        }
         
         public void AddUser(string username, string connectionId)
         {
