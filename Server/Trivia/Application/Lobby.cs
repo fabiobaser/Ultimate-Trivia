@@ -5,13 +5,13 @@ namespace Trivia.Application
 {
     public class Lobby
     {
-        public string Name { get; set; }
+        public string Id { get; set; }
         public Game Game { get; set; }
         public ConcurrentBag<User> Users { get; set; }
         
-        public Lobby(string lobbyName)
+        public Lobby(string lobbyId)
         {
-            Name = lobbyName;
+            Id = lobbyId;
             Users = new ConcurrentBag<User>();
         }
 

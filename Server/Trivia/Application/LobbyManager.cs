@@ -12,59 +12,58 @@ namespace Trivia.Application
     public class LobbyManager
     {
         private readonly IInviteCodeGenerator _inviteCodeGenerator;
+        private readonly UserManager _userManager;
         private readonly IHubContext<TrivialGameHub> _hubContext;
-        private readonly ConcurrentBag<Lobby> _lobbies;
+        private readonly ConcurrentDictionary<string, Lobby> _lobbies;
 
-        public LobbyManager(IInviteCodeGenerator inviteCodeGenerator, IHubContext<TrivialGameHub> hubContext)
+        public LobbyManager(IInviteCodeGenerator inviteCodeGenerator, UserManager userManager, IHubContext<TrivialGameHub> hubContext)
         {
             _inviteCodeGenerator = inviteCodeGenerator;
+            _userManager = userManager;
             _hubContext = hubContext;
             
-            _lobbies = new ConcurrentBag<Lobby>();
+            _lobbies = new ConcurrentDictionary<string, Lobby>();
         }
 
         public IEnumerable<string> GetAllLobbyNames()
         {
-            return _lobbies.Select(l => l.Name);
+            return _lobbies.Keys;
         }
         
         public async Task<Lobby> CreateLobbyAsync()
         {
-            string lobbyName;
+            string lobbyId;
             do
             {
-                lobbyName = _inviteCodeGenerator.GenerateCode();
+                lobbyId = _inviteCodeGenerator.GenerateCode();
             } 
-            while (_lobbies.Any(l => l.Name == lobbyName));
+            while (_lobbies.ContainsKey(lobbyId));
             
-            var lobby = new Lobby(lobbyName);
-            
-            _lobbies.Add(lobby);
+            var lobby = new Lobby(lobbyId);
+            _lobbies[lobbyId] = lobby;
+
             return lobby;
         }
     
-        public async Task JoinLobbyAsync(string lobbyName, string username, string connectionId)
+        public async Task JoinLobbyAsync(string lobbyId, string username, string connectionId)
         {
-            var lobby = _lobbies.FirstOrDefault(l => l.Name == lobbyName);
-            if (lobby == null)
+            if (!_lobbies.ContainsKey(lobbyId))
             {
                 throw new ApplicationException("lobby doesnt exist");
             }
 
-            var user = new User
-            {
-                Name = username,
-                ConnectionId = connectionId
-            };
+            _userManager.JoinLobby(connectionId, lobbyId);
 
-            await lobby.JoinAsync(user);
-
-            await _hubContext.Clients.Group(lobbyName).SendAsync(ClientCallNames.BroadcastMessage,"Server", $"{username} joined the lobby");
+            await _hubContext.Clients.Group(lobbyId).SendAsync(ClientCallNames.UserJoinedLobby, username);
         }
 
         public async Task LeaveLobbyAsync(string connectionId)
         {
+            var user = _userManager.GetUserByConnectionId(connectionId);
+            var leftLobbyId = user.LobbyId;
+            _userManager.LeaveLobby(connectionId);
             
+            await _hubContext.Clients.Group(leftLobbyId).SendAsync(ClientCallNames.UserLeftLobby, user.Name);
         }
     }
 }

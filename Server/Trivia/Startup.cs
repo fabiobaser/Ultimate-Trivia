@@ -25,6 +25,7 @@ namespace Trivia
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<LobbyManager>();
+            services.AddSingleton<UserManager>();
 
             services.AddUtils();
             services.AddHttpContextAccessor();
@@ -64,7 +65,7 @@ namespace Trivia
             app.UseExceptionHandler("/error");
             app.UseMiddleware<LoggingMiddleware>();
             
-            app.UseHttpsRedirection();
+            // app.UseHttpsRedirection();
 
             app.UseStaticFiles();
             app.UseRouting();

@@ -18,6 +18,7 @@
     <input type="text" id="lobby" />
     <input type="button" id="joinlobby" value="Join Lobby" />
     <input type="button" id="createlobby" value="Create Lobby" />
+    <input type="button" id="leaveLobby" value="Leave Lobby" />
     <ul id="discussion"></ul>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.7/signalr.min.js"></script>
@@ -30,7 +31,7 @@
         messageInput.focus();
 
         var connection = new signalR.HubConnectionBuilder()
-            .withUrl('http://localhost:5000/trivialGameHub')
+            .withUrl('http://localhost:5000/triviaGameServer')
             .build();
 
         connection.on('broadcastMessage', function (name, message) {
@@ -41,11 +42,28 @@
             document.getElementById('discussion').appendChild(liElement);
         });
 
+        connection.on('joinLobby', function (lobbyId, users) {
+           console.log("joined lobby " + lobbyId);
+           console.log(users);
+        });
+
+        connection.on('userJoinedLobby', function (user) {
+            var liElement = document.createElement('li');
+            liElement.innerHTML = '<strong>' + 'Server' + '</strong>:&nbsp;&nbsp;' + user + ' joined the lobby';
+            document.getElementById('discussion').appendChild(liElement);
+        });
+
+        connection.on('userLeftLobby', function (user) {
+            var liElement = document.createElement('li');
+            liElement.innerHTML = '<strong>' + 'Server' + '</strong>:&nbsp;&nbsp;' + user + ' left the lobby';
+            document.getElementById('discussion').appendChild(liElement);
+        });
+
         connection.start()
             .then(function () {
                 console.log('connection started');
                 document.getElementById('sendmessage').addEventListener('click', function (event) {
-                    connection.invoke('send', name, messageInput.value);
+                    connection.invoke('SendMessage', messageInput.value);
 
                     // Clear text box and reset focus for next comment.
                     messageInput.value = '';
@@ -58,8 +76,13 @@
                 });
 
                 document.getElementById('createlobby').addEventListener('click', function (event) {
-                    connection.invoke('createLobby');
+                    connection.invoke('createLobby', name);
                 });
+
+                document.getElementById('leaveLobby').addEventListener('click', function (event) {
+                    connection.invoke('LeaveLobby');
+                });
+                
                 
                 
             })
