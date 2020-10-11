@@ -18,7 +18,7 @@ export default class App extends Component {
 
   connectToHub = () => {
     const connection = new HubConnectionBuilder()
-      .withUrl("http://localhost:5000")
+      .withUrl("http://localhost:5000/triviaGameServer")
       .build()
 
     connection.on("send", (data) => {
