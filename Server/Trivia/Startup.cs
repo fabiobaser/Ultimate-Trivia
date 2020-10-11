@@ -49,7 +49,7 @@ namespace Trivia
                 options
                     .AddDefaultPolicy(builder =>
                         builder
-                            .WithOrigins("http://localhost:1234", "http://localhost:5000")
+                            .WithOrigins("http://localhost:1234", "http://localhost:5000", "http://localhost")
                             .AllowCredentials()));
             
             services.AddSignalR();
