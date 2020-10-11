@@ -73,7 +73,7 @@ namespace Trivia
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<TrivialGameHub>("/trivialGameHub");
+                endpoints.MapHub<TrivialGameHub>("/triviaGameServer");
             });
         }
     }
