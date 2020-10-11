@@ -1,4 +1,14 @@
 {
-    "name" : "ultimate-trivia-client",
-    "version" : "0.0.1"
+  "name": "ultimate-trivia-client",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "parcel src/index.html"
+  },
+  "dependencies": {
+    "parcel": "^1.12.4",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "semantic-ui-css": "^2.4.1",
+    "semantic-ui-react": "^2.0.0"
+  }
 }
