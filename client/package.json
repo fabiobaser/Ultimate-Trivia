@@ -5,6 +5,7 @@
     "dev": "parcel src/index.html"
   },
   "dependencies": {
+    "@microsoft/signalr": "^3.1.8",
     "parcel": "^1.12.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
