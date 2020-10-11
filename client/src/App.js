@@ -16,16 +16,28 @@ export default class App extends Component {
     this.connectToHub()
   }
 
+  createLobby = () => {
+    this.connection.invoke("CreateLobby", this.state.name)
+  }
+
+  joinLobby = () => {
+    const { name, lobbyId } = this.state
+    console.log("%cConnecting to code: ", "color: orange", lobbyId)
+    this.connection.invoke("JoinLobby", name, lobbyId)
+  }
+
   connectToHub = () => {
-    const connection = new HubConnectionBuilder()
+    this.connection = new HubConnectionBuilder()
       .withUrl("http://localhost:5000/triviaGameServer")
       .build()
 
-    connection.on("send", (data) => {
-      console.log(data)
+    this.connection.on("broadcastMessage", (username, message) => {
+      console.log(username, message)
     })
 
-    connection.start().then(() => connection.invoke("send", "Hello"))
+    this.connection
+      .start()
+      .then(() => this.connection.invoke("Send", "Hello", "wurst"))
   }
 
   handleInputChange = (e, props) => {
@@ -33,11 +45,6 @@ export default class App extends Component {
     const newState = this.state
     newState[name] = value
     this.setState(newState)
-  }
-
-  connectToLobby = () => {
-    const { lobbyId } = this.state
-    console.log("%cConnecting to code: ", "color: orange", lobbyId)
   }
 
   render() {
@@ -53,7 +60,8 @@ export default class App extends Component {
           placeholder='Einladungs Code'
           onChange={this.handleInputChange}
         />
-        <Button onClick={this.connectToLobby}>Spiel beitreten</Button>
+        <Button onClick={this.createLobby}>Lobby erstellen</Button>
+        <Button onClick={this.joinLobby}>Spiel beitreten</Button>
       </div>
     )
   }
