@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Utils;
 
 namespace StateMachine
 {
     public class State
     {
-        public delegate void StateEventHandler(object data, CancellationToken ct);
+        public delegate Task StateEventHandler(object data, CancellationToken ct);
         
         public Enum Name { get; }
-        private event StateEventHandler OnStateEnter;
-        private event StateEventHandler OnStateExit;
+        private StateEventHandler OnStateEnter;
+        private StateEventHandler OnStateExit;
         public List<Transition> Transitions = new List<Transition>();
         public double Timeout { get; private set; }
 
@@ -20,21 +21,16 @@ namespace StateMachine
             Name = name;
         }
 
-        public State OnEnter(params StateEventHandler[] events)
+        public State OnEnter(StateEventHandler onEnter)
         {
-            foreach (var e in events)
-            {
-                OnStateEnter += e;
-            }
+            OnStateEnter = onEnter;
+            
             return this;
         }
 
-        public State OnExit(params StateEventHandler[] events)
+        public State OnExit(StateEventHandler onExit)
         {
-            foreach (var e in events)
-            {
-                OnStateExit += e;
-            }
+            OnStateExit = onExit;
             return this;
         }
 
@@ -49,14 +45,14 @@ namespace StateMachine
             return this;
         }
 
-        public void Enter(object data, CancellationToken ct)
+        public async Task Enter(object data, CancellationToken ct)
         {
-            OnStateEnter?.Invoke(data, ct);
+            if (OnStateEnter != null) await OnStateEnter(data, ct);
         }
 
-        public void Exit(object data, CancellationToken ct)
+        public async Task Exit(object data, CancellationToken ct)
         {
-            OnStateExit?.Invoke(data, ct);
+            if (OnStateExit != null) await OnStateExit(data, ct);
         }
 
         public Transition On(Enum command)

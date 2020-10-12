@@ -72,7 +72,7 @@ namespace StateMachine
                 .Goto(StateMachineBaseState.Idle);
         }
 
-        private void HandleCommands()
+        private async Task HandleCommands()
         {
             while (!_commandHandlerCts.Token.IsCancellationRequested)
             {
@@ -83,7 +83,7 @@ namespace StateMachine
                     {
                         cmd = _commandQueue.Take(_transitionCts.Token);
                     }
-                    MoveNext(cmd.Command, _transitionCts.Token, cmd.Data);
+                    await MoveNext(cmd.Command, _transitionCts.Token, cmd.Data);
                 }
                 catch(OperationCanceledException e)
                 {
@@ -108,7 +108,7 @@ namespace StateMachine
             }
         }
 
-        protected void MoveNext(Enum command, CancellationToken cancellationToken, object data = null)
+        protected async Task MoveNext(Enum command, CancellationToken cancellationToken, object data = null)
         {
             try
             {
@@ -118,7 +118,7 @@ namespace StateMachine
 
                 cancellationToken.ThrowIfCancellationRequested();
                 if(!Equals(command, StateMachineBaseCommand.Cancel))
-                    CurrentState.Exit(data, cancellationToken);
+                    await CurrentState.Exit(data, cancellationToken);
 
                 _timeoutTimer.Stop();
 
@@ -131,7 +131,7 @@ namespace StateMachine
 
                 StartTimeoutTimer();
 
-                CurrentState.Enter(data, cancellationToken);
+                await CurrentState.Enter(data, cancellationToken);
 
                 cancellationToken.ThrowIfCancellationRequested();
             }
@@ -188,21 +188,24 @@ namespace StateMachine
             return state;
         }
 
-        protected virtual void OnIdleEnter(object data, CancellationToken cancellationToken)
+        protected virtual Task OnIdleEnter(object data, CancellationToken cancellationToken)
         {
+            return Task.CompletedTask;
         }
 
-        protected virtual void OnIdleExit(object data, CancellationToken cancellationToken)
+        protected virtual Task OnIdleExit(object data, CancellationToken cancellationToken)
         {
+            return Task.CompletedTask;
         }
 
-        protected virtual void OnCancelEnter(object data, CancellationToken cancellationToken)
+        protected virtual async Task OnCancelEnter(object data, CancellationToken cancellationToken)
         {
-            MoveNext(StateMachineBaseCommand.Done, cancellationToken);
+            await MoveNext(StateMachineBaseCommand.Done, cancellationToken);
         }
 
-        protected virtual void OnCancelExit(object data, CancellationToken cancellationToken)
+        protected virtual Task OnCancelExit(object data, CancellationToken cancellationToken)
         {
+            return Task.CompletedTask;
         }
 
         public virtual void Dispose()

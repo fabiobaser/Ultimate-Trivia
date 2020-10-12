@@ -18,6 +18,10 @@ export default class App extends Component {
     this.connectToHub()
   }
 
+  createGame = () => {
+    this.connection.invoke("CreateGame", { rounds: 3, roundDuration: 30 })
+  }
+  
   createLobby = () => {
     this.connection.invoke("CreateLobby", this.state.name)
   }
@@ -65,6 +69,38 @@ export default class App extends Component {
 
       this.setState({ userArray: userLeftEvent.usernames })
     })
+
+    
+    // TODO : Handle events correctly
+    this.connection.on("gameStarted", () => {
+      console.log(`game started`)
+    })
+
+    this.connection.on("showCategories", (showCategoriesEvent) => {
+      console.log(`user ${showCategoriesEvent.username} is choosing a category`)
+      console.log(showCategoriesEvent.categories)
+
+      if(this.state.name == showCategoriesEvent.username) {
+        this.connection.invoke("CategorySelected", "Hausparty")
+      }
+    })
+
+    this.connection.on("showQuestion", (showQuestionEvent) => {
+      console.log(`Question: ${showQuestionEvent.question}`)
+      console.log(showQuestionEvent.answers)
+
+      this.connection.invoke("AnswerSelected", "aha")     
+    })
+
+    this.connection.on("updatePoints", (updatePointsEvent) => {
+      console.log(updatePointsEvent.points)
+    })
+
+    this.connection.on("showFinalResult", (showFinalResultEvent) => {
+      console.log(showFinalResultEvent.points)
+    })
+    
+    // ----------------------------
 
     this.connection.start()
   }
@@ -117,7 +153,7 @@ export default class App extends Component {
                     onClick={this.createLobby}
                     disabled={this.state.connectedToLobby}>
                     Erstellen
-                  </Button>
+                  </Button>                 
                 </Card.Content>
               </Card>
             )}
@@ -151,6 +187,13 @@ export default class App extends Component {
                       : this.joinLobby,
                   }}
                 />
+                <Button
+                    basic
+                    fluid
+                    onClick={this.createGame}
+                    disabled={!this.state.connectedToLobby}>
+                  Start
+                </Button>
               </Card.Content>
             </Card>
           </Card.Group>

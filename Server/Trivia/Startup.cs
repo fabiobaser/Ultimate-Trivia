@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Trivia.Application;
+using Trivia.Application.Game;
 using Trivia.BackgroundJobs;
 using Trivia.Database;
 using Trivia.Hubs;
@@ -29,6 +30,7 @@ namespace Trivia
         {
             services.AddSingleton<LobbyManager>();
             services.AddSingleton<UserManager>();
+            services.AddTransient<GameFactory>();
 
             services.AddUtils();
             services.AddHttpContextAccessor();

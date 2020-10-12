@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Trivia.Application;
+using Trivia.Application.Game;
 using Trivia.Hubs.Events;
 using Trivia.Services;
 
@@ -44,6 +45,7 @@ namespace Trivia.Hubs
             
             var userInLobby = _userManager.GetUsersInLobby(lobbyId);
 
+            // TODO: move to joinLobbyAsync?
             await Clients.Caller.SendAsync(ClientCallNames.JoinLobby, new JoinLobbyEvent
             {
                 LobbyId = lobbyId,
@@ -62,6 +64,7 @@ namespace Trivia.Hubs
 
             var userInLobby = _userManager.GetUsersInLobby(lobby.Id);
 
+            // TODO: move to joinLobbyAsync?
             await Clients.Caller.SendAsync(ClientCallNames.JoinLobby, new JoinLobbyEvent
             {
                 LobbyId = lobby.Id,
@@ -80,9 +83,19 @@ namespace Trivia.Hubs
             }
         }
 
-        public async Task CreateGame(int rounds, int duration)
+        public async Task CreateGame(CreateGameEvent createGameEvent)
         {
-            // await _lobbyManager.
+            await _lobbyManager.CreateGameAsync(Context.ConnectionId, createGameEvent);
+        }
+        
+        public async Task CategorySelected(string category)
+        {
+            await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.GameStateTransition.CollectCategory, category);
+        }
+        
+        public async Task AnswerSelected(string answer)
+        {
+            await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.GameStateTransition.CollectAnswers,answer);
         }
     }
 }
