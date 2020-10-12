@@ -1,51 +1,33 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Trivia.Application.Game;
 
 namespace Trivia.HostedServices
 {
     public class GameManager : IDisposable
     {
-        public class GameHost : IDisposable
-        {
-            private IServiceScope _scope;
-            private Game Game { get; set; }
-
-            public GameHost(IServiceProvider serviceProvider)
-            {
-                _scope = serviceProvider.CreateScope();
-            }
-            
-            public string CreateGame(Action<GameConfiguration> configureOptions)
-            {
-                var options = new GameConfiguration();
-                configureOptions?.Invoke(options);
-                Game = ActivatorUtilities.CreateInstance<Game>(_scope.ServiceProvider, options);
-                return Game.Id;
-            }
-
-            public void EnqueueTransition(Enum command, object data = null) => Game.EnqueueTransition(command, data);
-
-            public void Dispose()
-            {
-                Game?.Dispose();
-                _scope?.Dispose();
-            }
-        }
-        
         private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<GameManager> _logger;
         private readonly ConcurrentDictionary<string, GameHost> _games;
 
-        public GameManager(IServiceProvider serviceProvider)
+        public GameManager(IServiceProvider serviceProvider, ILogger<GameManager> logger)
         {
             _serviceProvider = serviceProvider;
+            _logger = logger;
             _games = new ConcurrentDictionary<string, GameHost>();
         }
 
+        public List<string> GetAllGames()
+        {
+            return _games.Keys.ToList();
+        }
+        
         public string CreateGame(Action<GameConfiguration> configureOptions)
         {
             var host = new GameHost(_serviceProvider);
@@ -55,6 +37,16 @@ namespace Trivia.HostedServices
             _games[gameId] = host;
 
             return gameId;
+        }
+
+        public void DeleteGame(string gameId)
+        {
+            _logger.LogDebug("deleting game {gameId}", gameId);
+            _games[gameId]?.Dispose();
+            if (_games.TryRemove(gameId, out _))
+            {
+                throw new ApplicationException($"failed to delete game {gameId}");
+            }
         }
 
         public void PassEventToGame(string gameId, Game.GameStateTransition transition, object data = null)

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+using Quartz.Logging;
 using Trivia.Application.Game;
 using Trivia.HostedServices;
 using Trivia.Hubs;
@@ -19,16 +21,18 @@ namespace Trivia.Application
         private readonly UserManager _userManager;
         private readonly IHubContext<TriviaGameHub> _hubContext;
         private readonly GameManager _gameManager;
+        private readonly ILogger<LobbyManager> _logger;
 
         private ConcurrentDictionary<string, Lobby> Lobbies => _lobbyStore.Lobbies;
         
-        public LobbyManager(LobbyStore lobbyStore, IInviteCodeGenerator inviteCodeGenerator, UserManager userManager, IHubContext<TriviaGameHub> hubContext, GameManager gameManager)
+        public LobbyManager(LobbyStore lobbyStore, IInviteCodeGenerator inviteCodeGenerator, UserManager userManager, IHubContext<TriviaGameHub> hubContext, GameManager gameManager, ILogger<LobbyManager> logger)
         {
             _lobbyStore = lobbyStore;
             _inviteCodeGenerator = inviteCodeGenerator;
             _userManager = userManager;
             _hubContext = hubContext;
             _gameManager = gameManager;
+            _logger = logger;
         }
 
         public IEnumerable<string> GetAllLobbyNames()
@@ -38,11 +42,17 @@ namespace Trivia.Application
 
         public void DeleteLobby(string lobbyId)
         {
-            if (Lobbies.TryRemove(lobbyId, out var lobby))
+            _logger.LogDebug("deleting lobby {lobbyId}", lobbyId);
+            if (!Lobbies.TryRemove(lobbyId, out var lobby))
             {
                 throw new ApplicationException($"lobby {lobbyId} couldnt be deleted");
             }
-            // TODO: delete connected game
+
+            
+            if (lobby.GameId != null)
+            {
+                _gameManager.DeleteGame(lobby.GameId);
+            }
         }
         
         public async Task<Lobby> CreateLobbyAsync(string username)

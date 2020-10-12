@@ -141,6 +141,7 @@ namespace Trivia.Application.Game
 
         private async Task StartedEntered(object data, CancellationToken ct)
         {
+            Logger.LogDebug("Game {gameId} started", Id);
             GameStateData = new GameData
             {
                 CurrentRound = 1
@@ -207,10 +208,12 @@ namespace Trivia.Application.Game
             {
                 if (categorySelectedEvent.Username != GameStateData.CurrentUser)    // if some other user than current user choose a category go back to waiting for correct event
                 {
+                    Logger.LogWarning("{username} tried to select a category, but it is {currentUser}´s turn", categorySelectedEvent.Username, GameStateData.CurrentUser);
                     await MoveNext(GameStateTransition.WaitForCategory, ct);
                 }
                 else
                 {
+                    Logger.LogDebug("{username} selected category {category}", categorySelectedEvent.Username, categorySelectedEvent.Category);
                     GameStateData.Category = categorySelectedEvent.Category;
                     await MoveNext(GameStateTransition.ShowQuestion, ct);
                 }
@@ -239,7 +242,7 @@ namespace Trivia.Application.Game
                 new ShowQuestionEvent
                 {
                     Question = question.Content,
-                    Answers = question.Answers.Select(a => a.Content).ToList()
+                    Answers = question.Answers.Select(a => a.Content).OrderBy(a => Guid.NewGuid()).ToList()
                 }, cancellationToken: ct);
             
             await MoveNext(GameStateTransition.WaitForAnswers, ct);
@@ -264,6 +267,8 @@ namespace Trivia.Application.Game
                     AnswerGivenAt = _dateProvider.Now
                 };
 
+                Logger.LogDebug("{username} selected answer {answer}", answerCollectedEvent.Username, answerCollectedEvent.Answer);
+                
                 if (GameStateData.Users.Any(u => !GameStateData.UserAnswers.ContainsKey(u.Name)))
                 {
                     await MoveNext(GameStateTransition.WaitForAnswers, ct);
@@ -277,8 +282,11 @@ namespace Trivia.Application.Game
             {
                 throw new ApplicationException($"unexpected data received {data.GetType()}");
             }
-            
+
             // TODO: event for answer progress?
+            
+            // _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.UserAnswered, )
+            
         }
         
         private async Task HighlightingCorrectAnswerEnter(object data, CancellationToken ct)
