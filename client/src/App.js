@@ -1,15 +1,9 @@
 import React, { Component } from "react";
-import {
-  Input,
-  Button,
-  Card,
-  Container,
-  Header,
-  Label,
-} from "semantic-ui-react";
+import { Input, Button, Container, Header, Modal } from "semantic-ui-react";
 import { HubConnectionBuilder } from "@microsoft/signalr";
-import SelectButton from "./Components/SelectButton";
 import faker from "faker";
+import JoinCreateGame from "./Components/JoinCreateGame";
+import Game from "./Components/Game";
 
 export default class App extends Component {
   constructor(props) {
@@ -23,6 +17,8 @@ export default class App extends Component {
       showSelectableQuestions: false,
       selectableQuestions: [],
       possibleAnswers: [],
+      nameModalOpen: true,
+      chat: [],
     };
   }
 
@@ -45,8 +41,16 @@ export default class App extends Component {
   };
 
   leaveLobby = () => {
-    console.log("%cLeaving lobby", "color: red");
+    this.pushtToChat("", "You left the lobby");
     this.connection.invoke("LeaveLobby");
+  };
+
+  pushtToChat = (sender, message) => {
+    const newEntry = { sender, message };
+    const chat = this.state.chat;
+    chat.push(newEntry);
+
+    this.setState({ chat: chat });
   };
 
   connectToHub = () => {
@@ -59,8 +63,7 @@ export default class App extends Component {
     });
 
     this.connection.on("joinLobby", (joinLobbyEvent) => {
-      console.log("You joined the Lobby");
-      console.log(joinLobbyEvent.lobbyId, joinLobbyEvent.usernames);
+      this.pushtToChat("", "You joined the lobby");
       this.setState({
         userArray: joinLobbyEvent.usernames,
         connectedToLobby: true,
@@ -95,7 +98,7 @@ export default class App extends Component {
       console.log(
         `user ${showCategoriesEvent.username} is choosing a category`
       );
-      console.log(showCategoriesEvent.categories);
+      console.log("Categories:", showCategoriesEvent.categories);
 
       let showSelectableQuestions = false;
 
@@ -165,127 +168,58 @@ export default class App extends Component {
     this.setState({ selectableQuestions: [] });
   };
 
+  closeModal = () => {
+    this.setState({ nameModalOpen: false });
+  };
+
   render() {
+    const { connectedToLobby, lobbyId, name, chat } = this.state;
+
     return (
-      <Container textAlign="center" style={{ paddingTop: "4rem" }}>
+      <Container>
         <Header as="h1">Wilkommen bei Ultimate Trivia</Header>
-        <p>Gib als erstes deinen Namen ein</p>
-        <Input
-          name="name"
-          value={this.state.name}
-          placeholder="Dein Name"
-          onChange={this.handleInputChange}
-        />
 
-        {this.state.name !== "" && (
-          <Card.Group centered style={{ marginTop: "2rem" }}>
-            {this.state.userArray.length > 0 && (
-              <Card>
-                <Card.Content>
-                  <Card.Header>Spieler</Card.Header>
-                  {this.state.userArray.map((user) => (
-                    <Label key={user}>
-                      {user}
-                      <Label.Detail>
-                        {(this.state.points || {})[user] || 0}
-                      </Label.Detail>
-                    </Label>
-                  ))}
-                </Card.Content>
-              </Card>
-            )}
-
-            {!this.state.connectedToLobby && (
-              <Card>
-                <Card.Content>
-                  <Card.Header>Spiel erstellen</Card.Header>
-                  <Card.Description>
-                    Erstelle ein Spiel dem deine Freunde beitreten können
-                  </Card.Description>
-                </Card.Content>
-                <Card.Content extra>
-                  <Button
-                    basic
-                    fluid
-                    onClick={this.createLobby}
-                    disabled={this.state.connectedToLobby}
-                  >
-                    Erstellen
-                  </Button>
-                </Card.Content>
-              </Card>
-            )}
-
-            <Card>
-              <Card.Content>
-                <Card.Header>
-                  Spiel
-                  {this.state.connectedToLobby ? " Verlassen" : " Beitreten"}
-                </Card.Header>
-                <Card.Description>
-                  Wenn ein Freund ein Spiel erstellt kannst du hier den Code
-                  eingeben und dem Spiel beitreten. <b>Viel Spaß!</b>
-                </Card.Description>
-              </Card.Content>
-              <Card.Content extra>
-                <Input
-                  name="lobbyId"
-                  fluid
-                  value={this.state.lobbyId}
-                  placeholder="Einladungs Code"
-                  onChange={this.handleInputChange}
-                  action={{
-                    children: this.state.connectedToLobby
-                      ? "Verlassen"
-                      : "Beitreten",
-                    color: this.state.connectedToLobby ? "red" : "green",
-                    basic: true,
-                    onClick: this.state.connectedToLobby
-                      ? this.leaveLobby
-                      : this.joinLobby,
-                  }}
-                />
-                <Button
-                  basic
-                  fluid
-                  onClick={this.createGame}
-                  disabled={!this.state.connectedToLobby}
-                >
-                  Start
-                </Button>
-              </Card.Content>
-            </Card>
-          </Card.Group>
-        )}
-        {this.state.lobbyId !== "" && (
-          <h1>Einladungs Code: {this.state.lobbyId}</h1>
+        {!connectedToLobby && (
+          <JoinCreateGame
+            lobbyId={lobbyId}
+            joinLobby={this.joinLobby}
+            leaveLobby={this.leaveLobby}
+            createLobby={this.createLobby}
+            connectedToLobby={connectedToLobby}
+            handleInputChange={this.handleInputChange}
+          />
         )}
 
-        {this.state.selectableQuestions.length > 0 && (
-          <div>
-            <h2>Wähle eine Frage aus</h2>
-            {this.state.selectableQuestions.map((q) => (
-              <SelectButton
-                key={q}
-                value={q}
-                handler={this.handleQuestionSelect}
-              />
-            ))}
-          </div>
+        {connectedToLobby && (
+          <Game
+            selectableQuestions={this.state.selectableQuestions}
+            handleQuestionSelect={this.handleQuestionSelect}
+            handleAnswerSelect={this.handleAnswerSelect}
+            possibleAnswers={this.state.possibleAnswers}
+            userArray={this.state.userArray}
+            points={this.state.points}
+            createGame={this.createGame}
+            leaveLobby={this.leaveLobby}
+            name={name}
+            chat={chat}
+          />
         )}
 
-        {this.state.possibleAnswers.length > 0 && (
-          <div>
-            <h2>Wähle eine Antwort aus</h2>
-            {this.state.possibleAnswers.map((a) => (
-              <SelectButton
-                key={a}
-                value={a}
-                handler={this.handleAnswerSelect}
-              />
-            ))}
-          </div>
-        )}
+        <h1 style={{ width: "100%", textAlign: "center" }}>{lobbyId}</h1>
+
+        <Modal size={"mini"} open={this.state.nameModalOpen}>
+          <Modal.Header>Gib einen Namen ein</Modal.Header>
+          <Modal.Content>
+            <p>Zum Spielen brauchst du einen Namen</p>
+            <Input
+              fluid
+              name={"name"}
+              action={{ icon: "rocket", onClick: this.closeModal }}
+              value={this.state.name}
+              onChange={this.handleInputChange}
+            />
+          </Modal.Content>
+        </Modal>
       </Container>
     );
   }
