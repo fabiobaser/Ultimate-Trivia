@@ -35,7 +35,7 @@ namespace Trivia
 
             services.AddDbContext<ApplicationDbContext>(options =>
             {
-                options.UseSqlite(_configuration.GetConnectionString("DefaultConnection"));
+                options.UseNpgsql(_configuration.GetConnectionString("DefaultConnection"));
             });
             
             services.AddHealthChecks()
