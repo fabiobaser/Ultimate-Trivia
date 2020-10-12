@@ -5,8 +5,6 @@ import SelectButton from "./SelectButton";
 export default class Game extends Component {
   render() {
     const {
-      selectableQuestions,
-      handleQuestionSelect,
       handleAnswerSelect,
       possibleAnswers,
       userArray,
@@ -15,6 +13,10 @@ export default class Game extends Component {
       chat,
       createGame,
       leaveLobby,
+      topics,
+      handleTopicSelect,
+      question,
+      inGame,
     } = this.props;
 
     return (
@@ -42,22 +44,18 @@ export default class Game extends Component {
             )}
           </Grid.Column>
           <Grid.Column width={10}>
-            {selectableQuestions.length > 0 && (
+            {topics.length > 0 && (
               <div>
                 <h2>Wähle eine Frage aus</h2>
-                {selectableQuestions.map((q) => (
-                  <SelectButton
-                    key={q}
-                    value={q}
-                    handler={handleQuestionSelect}
-                  />
+                {topics.map((t) => (
+                  <SelectButton key={t} value={t} handler={handleTopicSelect} />
                 ))}
               </div>
             )}
 
             {possibleAnswers.length > 0 && (
               <div>
-                <h2>Wähle eine Antwort aus</h2>
+                <h2>{question}</h2>
                 {possibleAnswers.map((a) => (
                   <SelectButton
                     key={a}
@@ -70,9 +68,11 @@ export default class Game extends Component {
           </Grid.Column>
           <Grid.Column width={3}>
             <Button.Group>
-              <Button basic color={"green"} onClick={createGame}>
-                Start
-              </Button>
+              {!inGame && (
+                <Button basic color={"green"} onClick={createGame}>
+                  Start
+                </Button>
+              )}
               <Button basic color={"red"} onClick={leaveLobby}>
                 Spiel verlassen
               </Button>

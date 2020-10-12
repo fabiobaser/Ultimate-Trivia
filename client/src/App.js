@@ -19,6 +19,9 @@ export default class App extends Component {
       possibleAnswers: [],
       nameModalOpen: true,
       chat: [],
+      inGame: false,
+      topics: [],
+      question: "",
     };
   }
 
@@ -68,6 +71,7 @@ export default class App extends Component {
         userArray: joinLobbyEvent.usernames,
         connectedToLobby: true,
         lobbyId: joinLobbyEvent.lobbyId,
+        inGame: false,
       });
     });
 
@@ -91,34 +95,24 @@ export default class App extends Component {
 
     // TODO : Handle events correctly
     this.connection.on("gameStarted", () => {
-      console.log(`game started`);
+      this.setState({ inGame: true });
     });
 
     this.connection.on("showCategories", (showCategoriesEvent) => {
       console.log(
         `user ${showCategoriesEvent.username} is choosing a category`
       );
-      console.log("Categories:", showCategoriesEvent.categories);
 
-      let showSelectableQuestions = false;
-
-      if (this.state.name == showCategoriesEvent.username) {
-        showSelectableQuestions = true;
+      if (showCategoriesEvent.username === this.state.name) {
+        this.setState({ topics: showCategoriesEvent.categories });
       }
-      this.setState({
-        selectableQuestions: showCategoriesEvent.categories,
-        showSelectableQuestions,
-      });
-
-      console.log(showCategoriesEvent.categories);
-
-      /*if(this.state.name == showCategoriesEvent.username) {
-        this.connection.invoke("CategorySelected", "Hausparty")
-      }*/
     });
 
     this.connection.on("showQuestion", (showQuestionEvent) => {
-      this.setState({ possibleAnswers: showQuestionEvent.answers });
+      this.setState({
+        possibleAnswers: showQuestionEvent.answers,
+        question: showQuestionEvent.question,
+      });
 
       //this.connection.invoke("AnswerSelected", "aha")
     });
@@ -163,9 +157,9 @@ export default class App extends Component {
     this.setState({ possibleAnswers: [] });
   };
 
-  handleQuestionSelect = (question) => {
-    this.connection.invoke("CategorySelected", question);
-    this.setState({ selectableQuestions: [] });
+  handleTopicSelect = (topic) => {
+    this.connection.invoke("CategorySelected", topic);
+    this.setState({ topics: [] });
   };
 
   closeModal = () => {
@@ -173,7 +167,15 @@ export default class App extends Component {
   };
 
   render() {
-    const { connectedToLobby, lobbyId, name, chat } = this.state;
+    const {
+      connectedToLobby,
+      lobbyId,
+      name,
+      chat,
+      topics,
+      question,
+      inGame,
+    } = this.state;
 
     return (
       <Container>
@@ -192,8 +194,6 @@ export default class App extends Component {
 
         {connectedToLobby && (
           <Game
-            selectableQuestions={this.state.selectableQuestions}
-            handleQuestionSelect={this.handleQuestionSelect}
             handleAnswerSelect={this.handleAnswerSelect}
             possibleAnswers={this.state.possibleAnswers}
             userArray={this.state.userArray}
@@ -202,6 +202,10 @@ export default class App extends Component {
             leaveLobby={this.leaveLobby}
             name={name}
             chat={chat}
+            topics={topics}
+            question={question}
+            inGame={inGame}
+            handleTopicSelect={this.handleTopicSelect}
           />
         )}
 
