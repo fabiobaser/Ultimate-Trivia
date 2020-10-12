@@ -1,160 +1,179 @@
-import React, { Component } from "react"
-import { Input, Button, Card, Container, Header, Label } from "semantic-ui-react"
-import { HubConnectionBuilder } from "@microsoft/signalr"
+import React, { Component } from "react";
+import {
+  Input,
+  Button,
+  Card,
+  Container,
+  Header,
+  Label,
+} from "semantic-ui-react";
+import { HubConnectionBuilder } from "@microsoft/signalr";
 import SelectButton from "./Components/SelectButton";
+import faker from "faker";
 
 export default class App extends Component {
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
-      name: "Bobby",
+      name: faker.name.firstName(),
       lobbyId: "",
       userArray: [],
       connectedToLobby: false,
       showSelectableQuestions: false,
-      selectableQuestions : [],
-      possibleAnswers: []
-    }
+      selectableQuestions: [],
+      possibleAnswers: [],
+    };
   }
 
   componentDidMount() {
-    this.connectToHub()
+    this.connectToHub();
   }
 
   createGame = () => {
-    this.connection.invoke("CreateGame", { rounds: 3, roundDuration: 30 })
-  }
-  
+    this.connection.invoke("CreateGame", { rounds: 3, roundDuration: 30 });
+  };
+
   createLobby = () => {
-    this.connection.invoke("CreateLobby", this.state.name)
-  }
+    this.connection.invoke("CreateLobby", this.state.name);
+  };
 
   joinLobby = () => {
-    const { name, lobbyId } = this.state
-    console.log("%cConnecting to code: ", "color: orange", lobbyId)
-    this.connection.invoke("JoinLobby", name, lobbyId)
-  }
+    const { name, lobbyId } = this.state;
+    console.log("%cConnecting to code: ", "color: orange", lobbyId);
+    this.connection.invoke("JoinLobby", name, lobbyId);
+  };
 
   leaveLobby = () => {
-    console.log("%cLeaving lobby", "color: red")
-    this.connection.invoke("LeaveLobby")
-  }
+    console.log("%cLeaving lobby", "color: red");
+    this.connection.invoke("LeaveLobby");
+  };
 
   connectToHub = () => {
     this.connection = new HubConnectionBuilder()
       .withUrl("http://localhost:5000/triviaGameServer")
-      .build()
+      .build();
 
     this.connection.on("broadcastMessage", (username, message) => {
-      console.log(username, message)
-    })
+      console.log(username, message);
+    });
 
     this.connection.on("joinLobby", (joinLobbyEvent) => {
-      console.log("You joined the Lobby")
-      console.log(joinLobbyEvent.lobbyId, joinLobbyEvent.usernames)
-      this.setState({ userArray: joinLobbyEvent.usernames, connectedToLobby: true, lobbyId: joinLobbyEvent.lobbyId })
-    })
+      console.log("You joined the Lobby");
+      console.log(joinLobbyEvent.lobbyId, joinLobbyEvent.usernames);
+      this.setState({
+        userArray: joinLobbyEvent.usernames,
+        connectedToLobby: true,
+        lobbyId: joinLobbyEvent.lobbyId,
+      });
+    });
 
     this.connection.on("userJoinedLobby", (userJoinedEvent) => {
-      console.log(`${userJoinedEvent.newUser} joined the lobby`)
-      console.log("In the lobby are: ", userJoinedEvent.usernames)
-      this.setState({ userArray: userJoinedEvent.usernames })
-    })
+      console.log(`${userJoinedEvent.newUser} joined the lobby`);
+      console.log("In the lobby are: ", userJoinedEvent.usernames);
+      this.setState({ userArray: userJoinedEvent.usernames });
+    });
 
     this.connection.on("leaveLobby", () => {
-      console.log(`You have left the lobby`)
-      this.setState({ connectedToLobby: false, userArray: [] })
-    })
+      console.log(`You have left the lobby`);
+      this.setState({ connectedToLobby: false, userArray: [] });
+    });
 
     this.connection.on("userLeftLobby", (userLeftEvent) => {
-      console.log(`${userLeftEvent.leavingUser} has left the lobby`)
-      console.log("In the lobby are: ", userLeftEvent.usernames)
+      console.log(`${userLeftEvent.leavingUser} has left the lobby`);
+      console.log("In the lobby are: ", userLeftEvent.usernames);
 
-      this.setState({ userArray: userLeftEvent.usernames })
-    })
+      this.setState({ userArray: userLeftEvent.usernames });
+    });
 
-    
     // TODO : Handle events correctly
     this.connection.on("gameStarted", () => {
-      console.log(`game started`)
-    })
+      console.log(`game started`);
+    });
 
     this.connection.on("showCategories", (showCategoriesEvent) => {
-      console.log(`user ${showCategoriesEvent.username} is choosing a category`)
-      console.log(showCategoriesEvent.categories)
+      console.log(
+        `user ${showCategoriesEvent.username} is choosing a category`
+      );
+      console.log(showCategoriesEvent.categories);
 
-      let showSelectableQuestions = false
+      let showSelectableQuestions = false;
 
-      if(this.state.name == showCategoriesEvent.username) {
-        showSelectableQuestions = true
+      if (this.state.name == showCategoriesEvent.username) {
+        showSelectableQuestions = true;
       }
-      this.setState({ selectableQuestions: showCategoriesEvent.categories, showSelectableQuestions })
+      this.setState({
+        selectableQuestions: showCategoriesEvent.categories,
+        showSelectableQuestions,
+      });
 
-      console.log(showCategoriesEvent.categories)
+      console.log(showCategoriesEvent.categories);
 
       /*if(this.state.name == showCategoriesEvent.username) {
         this.connection.invoke("CategorySelected", "Hausparty")
       }*/
-    })
+    });
 
     this.connection.on("showQuestion", (showQuestionEvent) => {
-
-      this.setState({ possibleAnswers: showQuestionEvent.answers})
+      this.setState({ possibleAnswers: showQuestionEvent.answers });
 
       //this.connection.invoke("AnswerSelected", "aha")
-    })
+    });
 
     this.connection.on("updatePoints", (updatePointsEvent) => {
-      console.log(updatePointsEvent.points)
+      console.log(updatePointsEvent.points);
 
-      this.setState({ points: updatePointsEvent.points })
-    })
+      this.setState({ points: updatePointsEvent.points });
+    });
 
     this.connection.on("showFinalResult", (showFinalResultEvent) => {
-      console.log(showFinalResultEvent.points)
-    })
-    
+      console.log(showFinalResultEvent.points);
+    });
+
     // ----------------------------
 
-    this.connection.start()
-        .then((resolve) => {
-          console.log(resolve)
-        }, (reject) => {
-          console.log(reject)
-        })
-        .catch((error) => {
+    this.connection
+      .start()
+      .then(
+        (resolve) => {
+          console.log(resolve);
+        },
+        (reject) => {
+          console.log(reject);
+        }
+      )
+      .catch((error) => {
         console.log(error);
-    })
-  }
+      });
+  };
 
   handleInputChange = (e, props) => {
-    const { name, value } = props
-    if (this.state.connectedToLobby) return
-    const newState = this.state
-    newState[name] = value
-    this.setState(newState)
-  }
+    const { name, value } = props;
+    if (this.state.connectedToLobby) return;
+    const newState = this.state;
+    newState[name] = value;
+    this.setState(newState);
+  };
 
   handleAnswerSelect = (answer) => {
-    this.connection.invoke("AnswerSelected", answer)
-    this.setState({ possibleAnswers: []})
-  }
+    this.connection.invoke("AnswerSelected", answer);
+    this.setState({ possibleAnswers: [] });
+  };
 
   handleQuestionSelect = (question) => {
-    this.connection.invoke("CategorySelected", question)
-    this.setState({ selectableQuestions: []})
-  }
+    this.connection.invoke("CategorySelected", question);
+    this.setState({ selectableQuestions: [] });
+  };
 
   render() {
     return (
-      <Container textAlign='center' style={{ paddingTop: "4rem" }}>
-        <Header as='h1'>Wilkommen bei Ultimate Trivia</Header>
+      <Container textAlign="center" style={{ paddingTop: "4rem" }}>
+        <Header as="h1">Wilkommen bei Ultimate Trivia</Header>
         <p>Gib als erstes deinen Namen ein</p>
         <Input
-          name='name'
+          name="name"
           value={this.state.name}
-          placeholder='Dein Name'
+          placeholder="Dein Name"
           onChange={this.handleInputChange}
         />
 
@@ -167,7 +186,9 @@ export default class App extends Component {
                   {this.state.userArray.map((user) => (
                     <Label key={user}>
                       {user}
-                      <Label.Detail>{(this.state.points || {})[user] || 0}</Label.Detail>
+                      <Label.Detail>
+                        {(this.state.points || {})[user] || 0}
+                      </Label.Detail>
                     </Label>
                   ))}
                 </Card.Content>
@@ -187,9 +208,10 @@ export default class App extends Component {
                     basic
                     fluid
                     onClick={this.createLobby}
-                    disabled={this.state.connectedToLobby}>
+                    disabled={this.state.connectedToLobby}
+                  >
                     Erstellen
-                  </Button>                 
+                  </Button>
                 </Card.Content>
               </Card>
             )}
@@ -207,27 +229,28 @@ export default class App extends Component {
               </Card.Content>
               <Card.Content extra>
                 <Input
-                  name='lobbyId'
+                  name="lobbyId"
                   fluid
                   value={this.state.lobbyId}
-                  placeholder='Einladungs Code'
+                  placeholder="Einladungs Code"
                   onChange={this.handleInputChange}
                   action={{
                     children: this.state.connectedToLobby
                       ? "Verlassen"
                       : "Beitreten",
                     color: this.state.connectedToLobby ? "red" : "green",
-                         basic: true,
+                    basic: true,
                     onClick: this.state.connectedToLobby
                       ? this.leaveLobby
                       : this.joinLobby,
                   }}
                 />
                 <Button
-                    basic
-                    fluid
-                    onClick={this.createGame}
-                    disabled={!this.state.connectedToLobby}>
+                  basic
+                  fluid
+                  onClick={this.createGame}
+                  disabled={!this.state.connectedToLobby}
+                >
                   Start
                 </Button>
               </Card.Content>
@@ -238,16 +261,32 @@ export default class App extends Component {
           <h1>Einladungs Code: {this.state.lobbyId}</h1>
         )}
 
-        {this.state.showSelectableQuestions && <div>
-          <h2>Wähle eine Frage aus</h2>
-          {this.state.selectableQuestions.map(q => <SelectButton key={q} value={q} handler={this.handleQuestionSelect}/>)}
-        </div>}
+        {this.state.selectableQuestions.length > 0 && (
+          <div>
+            <h2>Wähle eine Frage aus</h2>
+            {this.state.selectableQuestions.map((q) => (
+              <SelectButton
+                key={q}
+                value={q}
+                handler={this.handleQuestionSelect}
+              />
+            ))}
+          </div>
+        )}
 
-        {this.state.possibleAnswers.length > 0 && <div>
-          <h2>Wähle eine Antwort aus</h2>
-          {this.state.possibleAnswers.map(a => <SelectButton key={a} value={a} handler={this.handleAnswerSelect}/>)}
-        </div>}
+        {this.state.possibleAnswers.length > 0 && (
+          <div>
+            <h2>Wähle eine Antwort aus</h2>
+            {this.state.possibleAnswers.map((a) => (
+              <SelectButton
+                key={a}
+                value={a}
+                handler={this.handleAnswerSelect}
+              />
+            ))}
+          </div>
+        )}
       </Container>
-    )
+    );
   }
 }
