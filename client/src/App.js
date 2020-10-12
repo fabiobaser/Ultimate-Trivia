@@ -7,8 +7,10 @@ export default class App extends Component {
     super(props)
 
     this.state = {
-      name: "",
+      name: "Bobby",
       lobbyId: "",
+      userArray: [],
+      connectedToLobby: false,
     }
   }
 
@@ -26,6 +28,11 @@ export default class App extends Component {
     this.connection.invoke("JoinLobby", name, lobbyId)
   }
 
+  leaveLobby = () => {
+    console.log("%cLeaving lobby", "color: red")
+    this.connection.invoke("LeaveLobby")
+  }
+
   connectToHub = () => {
     this.connection = new HubConnectionBuilder()
       .withUrl("http://localhost:5000/triviaGameServer")
@@ -35,13 +42,39 @@ export default class App extends Component {
       console.log(username, message)
     })
 
-    this.connection
-      .start()
-      .then(() => this.connection.invoke("Send", "Hello", "wurst"))
+    this.connection.on("joinLobby", (lobbyId, userArrayString) => {
+      const userArray = JSON.parse(userArrayString)
+      console.log("You joined the Lobby")
+      console.log(lobbyId, userArray)
+      this.setState({ userArray: userArray, connectedToLobby: true, lobbyId })
+    })
+
+    this.connection.on("userJoinedLobby", (newUser, userArrayString) => {
+      const userArray = JSON.parse(userArrayString)
+      console.log(`${newUser} joined the lobby`)
+      console.log("In the lobby are: ", userArray)
+      this.setState({ userArray: userArray })
+    })
+
+    this.connection.on("leaveLobby", () => {
+      console.log(`You have left the lobby`)
+      this.setState({ connectedToLobby: false, userArray: [] })
+    })
+
+    this.connection.on("userLeftLobby", (leftUser, userArrayString) => {
+      const userArray = JSON.parse(userArrayString)
+      console.log(`${leftUser} has left the lobby`)
+      console.log("In the lobby are: ", userArray)
+
+      this.setState({ userArray })
+    })
+
+    this.connection.start()
   }
 
   handleInputChange = (e, props) => {
     const { name, value } = props
+    if (this.state.connectedToLobby) return
     const newState = this.state
     newState[name] = value
     this.setState(newState)
@@ -54,29 +87,50 @@ export default class App extends Component {
         <p>Gib als erstes deinen Namen ein</p>
         <Input
           name='name'
+          value={this.state.name}
           placeholder='Dein Name'
           onChange={this.handleInputChange}
         />
 
         {this.state.name !== "" && (
-          <Card.Group centered style={{ marginTop: "2rem" }} disabled>
-            <Card>
-              <Card.Content>
-                <Card.Header>Spiel erstellen</Card.Header>
-                <Card.Description>
-                  Erstelle ein Spiel dem deine Freunde beitreten können
-                </Card.Description>
-              </Card.Content>
-              <Card.Content extra>
-                <Button basic fluid onClick={this.createLobby}>
-                  Erstellen
-                </Button>
-              </Card.Content>
-            </Card>
+          <Card.Group centered style={{ marginTop: "2rem" }}>
+            {this.state.userArray.length > 0 && (
+              <Card>
+                <Card.Content>
+                  <Card.Header>Spieler</Card.Header>
+                  {this.state.userArray.map((user) => (
+                    <p key={user}>{user}</p>
+                  ))}
+                </Card.Content>
+              </Card>
+            )}
+
+            {!this.state.connectedToLobby && (
+              <Card>
+                <Card.Content>
+                  <Card.Header>Spiel erstellen</Card.Header>
+                  <Card.Description>
+                    Erstelle ein Spiel dem deine Freunde beitreten können
+                  </Card.Description>
+                </Card.Content>
+                <Card.Content extra>
+                  <Button
+                    basic
+                    fluid
+                    onClick={this.createLobby}
+                    disabled={this.state.connectedToLobby}>
+                    Erstellen
+                  </Button>
+                </Card.Content>
+              </Card>
+            )}
 
             <Card>
               <Card.Content>
-                <Card.Header>Spiel beitreten</Card.Header>
+                <Card.Header>
+                  Spiel
+                  {this.state.connectedToLobby ? " Verlassen" : " Beitreten"}
+                </Card.Header>
                 <Card.Description>
                   Wenn ein Freund ein Spiel erstellt kannst du hier den Code
                   eingeben und dem Spiel beitreten. <b>Viel Spaß!</b>
@@ -86,18 +140,26 @@ export default class App extends Component {
                 <Input
                   name='lobbyId'
                   fluid
+                  value={this.state.lobbyId}
                   placeholder='Einladungs Code'
                   onChange={this.handleInputChange}
                   action={{
-                    children: "Beitreten",
-                    color: "green",
+                    children: this.state.connectedToLobby
+                      ? "Verlassen"
+                      : "Beitreten",
+                    color: this.state.connectedToLobby ? "red" : "green",
                     basic: true,
-                    onClick: this.joinLobby,
+                    onClick: this.state.connectedToLobby
+                      ? this.leaveLobby
+                      : this.joinLobby,
                   }}
                 />
               </Card.Content>
             </Card>
           </Card.Group>
+        )}
+        {this.state.lobbyId !== "" && (
+          <h1>Einladungs Code: {this.state.lobbyId}</h1>
         )}
       </Container>
     )
