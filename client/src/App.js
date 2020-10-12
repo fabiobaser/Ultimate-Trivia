@@ -42,18 +42,16 @@ export default class App extends Component {
       console.log(username, message)
     })
 
-    this.connection.on("joinLobby", (lobbyId, userArrayString) => {
-      const userArray = JSON.parse(userArrayString)
+    this.connection.on("joinLobby", (joinLobbyEvent) => {
       console.log("You joined the Lobby")
-      console.log(lobbyId, userArray)
-      this.setState({ userArray: userArray, connectedToLobby: true, lobbyId })
+      console.log(joinLobbyEvent.lobbyId, joinLobbyEvent.usernames)
+      this.setState({ userArray: joinLobbyEvent.usernames, connectedToLobby: true, lobbyId: joinLobbyEvent.lobbyId })
     })
 
-    this.connection.on("userJoinedLobby", (newUser, userArrayString) => {
-      const userArray = JSON.parse(userArrayString)
-      console.log(`${newUser} joined the lobby`)
-      console.log("In the lobby are: ", userArray)
-      this.setState({ userArray: userArray })
+    this.connection.on("userJoinedLobby", (userJoinedEvent) => {
+      console.log(`${userJoinedEvent.newUser} joined the lobby`)
+      console.log("In the lobby are: ", userJoinedEvent.usernames)
+      this.setState({ userArray: userJoinedEvent.usernames })
     })
 
     this.connection.on("leaveLobby", () => {
@@ -61,12 +59,11 @@ export default class App extends Component {
       this.setState({ connectedToLobby: false, userArray: [] })
     })
 
-    this.connection.on("userLeftLobby", (leftUser, userArrayString) => {
-      const userArray = JSON.parse(userArrayString)
-      console.log(`${leftUser} has left the lobby`)
-      console.log("In the lobby are: ", userArray)
+    this.connection.on("userLeftLobby", (userLeftEvent) => {
+      console.log(`${userLeftEvent.leavingUser} has left the lobby`)
+      console.log("In the lobby are: ", userLeftEvent.usernames)
 
-      this.setState({ userArray })
+      this.setState({ userArray: userLeftEvent.usernames })
     })
 
     this.connection.start()

@@ -20,5 +20,9 @@
       <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\BackgroundScheduler\BackgroundScheduler.csproj" />
+    </ItemGroup>
+
 
 </Project>

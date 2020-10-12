@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trivia", "Trivia\Trivia.csproj", "{3BC89ABE-EA4B-4AB1-9741-F741A79DAFE0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackgroundScheduler", "BackgroundScheduler\BackgroundScheduler.csproj", "{BAC32301-8F19-4BAD-B871-CB6782D61D8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{3BC89ABE-EA4B-4AB1-9741-F741A79DAFE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3BC89ABE-EA4B-4AB1-9741-F741A79DAFE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3BC89ABE-EA4B-4AB1-9741-F741A79DAFE0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAC32301-8F19-4BAD-B871-CB6782D61D8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAC32301-8F19-4BAD-B871-CB6782D61D8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAC32301-8F19-4BAD-B871-CB6782D61D8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAC32301-8F19-4BAD-B871-CB6782D61D8D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

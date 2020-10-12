@@ -1,3 +1,5 @@
+using System.Text.Json;
+using BackgroundScheduler;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +9,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Trivia.Application;
+using Trivia.BackgroundJobs;
 using Trivia.Database;
 using Trivia.Hubs;
 using Trivia.Middlewares;
@@ -39,7 +42,7 @@ namespace Trivia
                 .AddDbContextCheck<ApplicationDbContext>();
             
             services.AddControllers()
-                .AddNewtonsoftJson(options =>
+                .AddNewtonsoftJson(options => // TODO: change custom serializer to system.text.json
                 {
                     options.SerializerSettings.Converters.Add(new StringEnumConverter());
                     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
@@ -52,11 +55,18 @@ namespace Trivia
                         builder
                             .WithOrigins("http://localhost:1234", "http://localhost:5000", "http://localhost")
                             .AllowCredentials()));
-            
-            services.AddSignalR();
+
+            services.AddSignalR()
+                .AddJsonProtocol(options =>
+                {
+                    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+                });
             
             services.AddApiVersioningAndExplorer();
             services.AddOpenApi();
+
+            services.AddBackgroundScheduler()
+                .AddJob<CleanOldLobbiesJob>(_configuration);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -74,7 +84,7 @@ namespace Trivia
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapHub<TrivialGameHub>("/triviaGameServer");
+                endpoints.MapHub<TriviaGameHub>("/triviaGameServer");
             });
         }
     }

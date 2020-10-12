@@ -3,20 +3,19 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Trivia.Application;
+using Trivia.Hubs.Events;
 using Trivia.Services;
 
 namespace Trivia.Hubs
 {
-    public class TrivialGameHub : Hub
+    public class TriviaGameHub : Hub
     {
         private readonly UserManager _userManager;
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly LobbyManager _lobbyManager;
 
-        public TrivialGameHub(LobbyManager lobbyManager, UserManager userManager, IJsonSerializer jsonSerializer)
+        public TriviaGameHub(LobbyManager lobbyManager, UserManager userManager)
         {
             _userManager = userManager;
-            _jsonSerializer = jsonSerializer;
             _lobbyManager = lobbyManager;
         }
         
@@ -26,6 +25,8 @@ namespace Trivia.Hubs
             _userManager.RemoveUser(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception);
         }
+        
+        //TODO: Errorhandling and custom error event for all exceptions
         
         public async Task SendMessage(string message)
         {
@@ -43,9 +44,11 @@ namespace Trivia.Hubs
             
             var userInLobby = _userManager.GetUsersInLobby(lobbyId);
 
-            var serializedUsers = _jsonSerializer.Serialize(userInLobby.Select(u => u.Name));
-            
-            await Clients.Caller.SendAsync(ClientCallNames.JoinLobby, lobbyId, serializedUsers);
+            await Clients.Caller.SendAsync(ClientCallNames.JoinLobby, new JoinLobbyEvent
+            {
+                LobbyId = lobbyId,
+                Usernames = userInLobby.Select(u => u.Name).ToList()
+            });
             
         }
         
@@ -58,17 +61,23 @@ namespace Trivia.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, lobby.Id);
 
             var userInLobby = _userManager.GetUsersInLobby(lobby.Id);
-            var serializedUsers = _jsonSerializer.Serialize(userInLobby.Select(u => u.Name));
-            
-            await Clients.Caller.SendAsync(ClientCallNames.JoinLobby, lobby.Id, serializedUsers);
+
+            await Clients.Caller.SendAsync(ClientCallNames.JoinLobby, new JoinLobbyEvent
+            {
+                LobbyId = lobby.Id,
+                Usernames = userInLobby.Select(u => u.Name).ToList()
+            });
         }
 
         public async Task LeaveLobby()
         {
             var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
-            await Groups.RemoveFromGroupAsync(Context.ConnectionId, user.LobbyId);
-            await _lobbyManager.LeaveLobbyAsync(Context.ConnectionId);
-            await Clients.Caller.SendAsync(ClientCallNames.LeaveLobby);
+            if (user.LobbyId != null)
+            {
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, user.LobbyId);
+                await _lobbyManager.LeaveLobbyAsync(Context.ConnectionId);
+                await Clients.Caller.SendAsync(ClientCallNames.LeaveLobby);
+            }
         }
 
         public async Task CreateGame(int rounds, int duration)
