@@ -103,6 +103,17 @@ export default class App extends Component {
     // ----------------------------
 
     this.connection.start()
+        .then((resolve) => {
+          debugger;
+          console.log(resolve)
+        }, (reject) => {
+          debugger;
+          console.log(reject)
+        })
+        .catch((error) => {
+          debugger;
+        console.log(error);
+    })
   }
 
   handleInputChange = (e, props) => {

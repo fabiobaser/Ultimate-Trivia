@@ -261,6 +261,8 @@ namespace Trivia.Application.Game
             {
                 throw new ApplicationException($"unexpected data received {data.GetType()}");
             }
+            
+            // TODO: event for answer progress?
         }
         
         private async Task CalculatingPointsEnter(object data, CancellationToken ct)

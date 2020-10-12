@@ -32,6 +32,8 @@ namespace Trivia
             services.AddSingleton<UserManager>();
             services.AddTransient<GameFactory>();
 
+            services.AddTransient<QuestionRepository>();
+            
             services.AddUtils();
             services.AddHttpContextAccessor();
 
@@ -55,7 +57,7 @@ namespace Trivia
                 options
                     .AddDefaultPolicy(builder =>
                         builder
-                            .WithOrigins("http://localhost:1234", "http://localhost:5000", "http://localhost")
+                            .WithOrigins("http://localhost:1234", "http://localhost:5000", "http://marceljenner.com:5000", "http://marceljenner.com:1234", "http://marceljenner.com")
                             .AllowCredentials()));
 
             services.AddSignalR()
