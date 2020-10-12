@@ -89,7 +89,7 @@ export default class App extends Component {
       console.log(`Question: ${showQuestionEvent.question}`)
       console.log(showQuestionEvent.answers)
 
-      this.connection.invoke("AnswerSelected", "aha")     
+      this.connection.invoke("AnswerSelected", "aha")
     })
 
     this.connection.on("updatePoints", (updatePointsEvent) => {

@@ -131,6 +131,7 @@ namespace StateMachine
 
                 StartTimeoutTimer();
 
+                Logger.LogTrace("moved from state {lastState} to {state} with {transition} Transition", LastState.Name, CurrentState.Name, command);
                 await CurrentState.Enter(data, cancellationToken);
 
                 cancellationToken.ThrowIfCancellationRequested();

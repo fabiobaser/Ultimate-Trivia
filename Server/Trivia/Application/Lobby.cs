@@ -14,6 +14,8 @@ namespace Trivia.Application
 
         public void CreateGame(Game.Game game)
         {
+            Game?.Dispose();
+
             Game = game;
             game.EnqueueTransition(Application.Game.Game.GameStateTransition.StartGame);
         }
