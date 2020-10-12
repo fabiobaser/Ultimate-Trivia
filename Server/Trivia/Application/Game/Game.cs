@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using StateMachine;
+using Trivia.Database;
 using Trivia.Hubs;
 using Trivia.Hubs.Events;
 using Trivia.Services;
@@ -25,6 +26,7 @@ namespace Trivia.Application.Game
             ShowingQuestion,
             WaitingForAnswers,
             CollectingAnswers,
+            HighlightingCorrectAnswer,
             CalculatingPoints,
             ShowingFinalResult
         }
@@ -39,6 +41,7 @@ namespace Trivia.Application.Game
             ShowQuestion,
             WaitForAnswers,
             CollectAnswers,
+            HighlightCorrectAnswer,
             CalculatePoints,
             ShowFinalResult
         }
@@ -50,10 +53,10 @@ namespace Trivia.Application.Game
                 public string Content { get; set; }
                 public DateTimeOffset AnswerGivenAt { get; set; }
             }
-            
             public int CurrentRound { get; set; }
             public string CurrentUser { get; set; }
             public DateTimeOffset QuestionStartedAt { get; set; }
+            public string CorrectAnswer { get; set; }
             public List<User> Users { get; set; }
             public Dictionary<string, int> Points { get; set; } = new Dictionary<string, int>();
             public Dictionary<string, Answer> UserAnswers { get; set; } = new Dictionary<string, Answer>();
@@ -61,17 +64,22 @@ namespace Trivia.Application.Game
 
         }
         
+        
         private readonly IHubContext<TriviaGameHub> _hubContext;
         private readonly IDateProvider _dateProvider;
         private readonly UserManager _userManager;
+        private readonly QuestionRepository _questionRepository;
         private readonly GameConfiguration _configuration;
+        
+        public string Id { get; set; } = Guid.NewGuid().ToString();
         private GameData GameStateData;
         
-        public Game(ILogger<Game> logger, IHubContext<TriviaGameHub> hubContext, IDateProvider dateProvider, UserManager userManager, GameConfiguration configuration) : base(logger)
+        public Game(ILogger<Game> logger, IHubContext<TriviaGameHub> hubContext, IDateProvider dateProvider, UserManager userManager, QuestionRepository questionRepository, GameConfiguration configuration) : base(logger)
         {
             _hubContext = hubContext;
             _dateProvider = dateProvider;
             _userManager = userManager;
+            _questionRepository = questionRepository;
             _configuration = configuration;
         }
 
@@ -113,9 +121,13 @@ namespace Trivia.Application.Game
 
             AddState(GameState.CollectingAnswers)
                 .On(GameStateTransition.WaitForAnswers).Goto(GameState.WaitingForAnswers)
-                .On(GameStateTransition.CalculatePoints).Goto(GameState.CalculatingPoints)
+                .On(GameStateTransition.HighlightCorrectAnswer).Goto(GameState.HighlightingCorrectAnswer)
                 .OnEnter(CollectingAnswerEnter);
 
+            AddState(GameState.HighlightingCorrectAnswer)
+                .On(GameStateTransition.CalculatePoints).Goto(GameState.CalculatingPoints)
+                .OnEnter(HighlightingCorrectAnswerEnter);
+            
             AddState(GameState.CalculatingPoints)
                 .On(GameStateTransition.StartNewRound).Goto(GameState.StartingNewRound)
                 .OnEnter(CalculatingPointsEnter);
@@ -124,6 +136,8 @@ namespace Trivia.Application.Game
                 .On(StateMachineBaseCommand.Done).Goto(StateMachineBaseState.Idle)
                 .OnEnter(ShowingFinalResultEnter);
         }
+
+      
 
         private async Task StartedEntered(object data, CancellationToken ct)
         {
@@ -176,13 +190,12 @@ namespace Trivia.Application.Game
         
         private async Task ShowingCategoriesEnter(object data, CancellationToken ct)
         {
+            var categories = await _questionRepository.GetRandomCategories(3);
+            
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.ShowCategories, new ShowCategoriesEvent
             {
                 Username = GameStateData.CurrentUser,
-                Categories = new List<string>
-                {
-                    "Im Labor", "Hausparty", "Fabio´s Lieblingsaktivitäten"    // TODO: get random categories from database
-                }
+                Categories = categories
             }, ct);
 
             await MoveNext(GameStateTransition.WaitForCategory, ct);
@@ -211,19 +224,22 @@ namespace Trivia.Application.Game
         
         private async Task ShowingQuestionEnter(object data, CancellationToken ct)
         {
-            
-            // TODO: get question and answers from database
+            var question = await _questionRepository.GetRandomQuestionsFromCategory(GameStateData.Category);
 
             GameStateData.QuestionStartedAt = _dateProvider.Now;
+
+            GameStateData.CorrectAnswer = question.Answers.FirstOrDefault(a => a.IsCorrectAnswer)?.Content;
+
+            if (GameStateData.CorrectAnswer == null)
+            {
+                throw new ApplicationException($"no correct answer for question {question.Id}");
+            }
             
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.ShowQuestion,
                 new ShowQuestionEvent
                 {
-                    Question = "Ole?",
-                    Answers = new List<string>
-                    {
-                        "definitiv", "ne", "ole", "aha"
-                    }
+                    Question = question.Content,
+                    Answers = question.Answers.Select(a => a.Content).ToList()
                 }, cancellationToken: ct);
             
             await MoveNext(GameStateTransition.WaitForAnswers, ct);
@@ -254,7 +270,7 @@ namespace Trivia.Application.Game
                 }
                 else
                 {
-                    await MoveNext(GameStateTransition.CalculatePoints, ct);
+                    await MoveNext(GameStateTransition.HighlightCorrectAnswer, ct);
                 }
             }
             else
@@ -265,11 +281,39 @@ namespace Trivia.Application.Game
             // TODO: event for answer progress?
         }
         
+        private async Task HighlightingCorrectAnswerEnter(object data, CancellationToken ct)
+        {
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.HighlightCorrectAnswer,
+                new HighlightCorrectAnswerEvent
+                {
+                    CorrectAnswer = GameStateData.CorrectAnswer,
+                    UserAnswers = GameStateData.UserAnswers.ToDictionary(kv => kv.Key, kv => kv.Value.Content)
+                }, cancellationToken: ct);
+
+            await Task.Delay(3000, ct);
+            
+            await MoveNext(GameStateTransition.CalculatePoints, ct);
+        }
+        
         private async Task CalculatingPointsEnter(object data, CancellationToken ct)
         {
-            foreach (var user in GameStateData.UserAnswers)
+            var correctAnswers = GameStateData.UserAnswers
+                .Where(a => a.Value.Content == GameStateData.CorrectAnswer)
+                .OrderBy(a => a.Value.AnswerGivenAt)
+                .ToList();
+
+            for (var i = 0; i < correctAnswers.Count; i++)
             {
-                GameStateData.Points[user.Key] = 10;    // TODO: calculate points correctly
+                var userAnswerPair = correctAnswers[i];
+
+                if (GameStateData.Points.ContainsKey(userAnswerPair.Key))
+                {
+                    GameStateData.Points[userAnswerPair.Key] += GameStateData.Users.Count - i;
+                }
+                else
+                {
+                    GameStateData.Points[userAnswerPair.Key] = GameStateData.Users.Count - i;
+                }
             }
 
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.UpdatePoints,

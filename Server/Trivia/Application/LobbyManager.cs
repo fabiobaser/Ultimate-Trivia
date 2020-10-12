@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Trivia.Application.Game;
-using Trivia.Database.Entities;
+using Trivia.HostedServices;
 using Trivia.Hubs;
 using Trivia.Hubs.Events;
 using Trivia.Services;
@@ -14,54 +14,55 @@ namespace Trivia.Application
 {
     public class LobbyManager
     {
+        private readonly LobbyStore _lobbyStore;
         private readonly IInviteCodeGenerator _inviteCodeGenerator;
         private readonly UserManager _userManager;
         private readonly IHubContext<TriviaGameHub> _hubContext;
-        private readonly GameFactory _gameFactory;
-        private readonly ConcurrentDictionary<string, Lobby> _lobbies;
+        private readonly GameManager _gameManager;
 
-        public LobbyManager(IInviteCodeGenerator inviteCodeGenerator, UserManager userManager, IHubContext<TriviaGameHub> hubContext, GameFactory gameFactory)
+        private ConcurrentDictionary<string, Lobby> Lobbies => _lobbyStore.Lobbies;
+        
+        public LobbyManager(LobbyStore lobbyStore, IInviteCodeGenerator inviteCodeGenerator, UserManager userManager, IHubContext<TriviaGameHub> hubContext, GameManager gameManager)
         {
+            _lobbyStore = lobbyStore;
             _inviteCodeGenerator = inviteCodeGenerator;
             _userManager = userManager;
             _hubContext = hubContext;
-            _gameFactory = gameFactory;
-
-            _lobbies = new ConcurrentDictionary<string, Lobby>();
+            _gameManager = gameManager;
         }
 
         public IEnumerable<string> GetAllLobbyNames()
         {
-            return _lobbies.Keys;
+            return Lobbies.Keys;
         }
 
         public void DeleteLobby(string lobbyId)
         {
-            if (_lobbies.TryRemove(lobbyId, out var lobby))
+            if (Lobbies.TryRemove(lobbyId, out var lobby))
             {
                 throw new ApplicationException($"lobby {lobbyId} couldnt be deleted");
             }
-            lobby?.Dispose();
+            // TODO: delete connected game
         }
         
-        public async Task<Lobby> CreateLobbyAsync()
+        public async Task<Lobby> CreateLobbyAsync(string username)
         {
             string lobbyId;
             do
             {
                 lobbyId = _inviteCodeGenerator.GenerateCode();
             } 
-            while (_lobbies.ContainsKey(lobbyId));
+            while (Lobbies.ContainsKey(lobbyId));
             
-            var lobby = new Lobby(lobbyId);
-            _lobbies[lobbyId] = lobby;
+            var lobby = new Lobby(lobbyId, username);
+            Lobbies[lobbyId] = lobby;
 
             return lobby;
         }
     
         public async Task JoinLobbyAsync(string lobbyId, string username, string connectionId)
         {
-            if (!_lobbies.ContainsKey(lobbyId))
+            if (!Lobbies.ContainsKey(lobbyId))
             {
                 throw new ApplicationException("lobby doesnt exist");
             }
@@ -70,12 +71,19 @@ namespace Trivia.Application
             
             _userManager.JoinLobby(connectionId, lobbyId);
 
-            var usersInLobby = _userManager.GetUsersInLobby(lobbyId);
+            var usersInLobby = _userManager.GetUsersInLobby(lobbyId).Select(u => u.Name).ToList();
 
             await _hubContext.Clients.Group(lobbyId).SendAsync(ClientCallNames.UserJoinedLobby, new UserJoinedEvent
             {
                 NewUser = username,
-                Usernames = usersInLobby.Select(u => u.Name).ToList()
+                Usernames = usersInLobby
+            });
+            
+            await _hubContext.Clients.Client(connectionId).SendAsync(ClientCallNames.JoinLobby, new JoinLobbyEvent
+            {
+                LobbyId = lobbyId,
+                Creator = Lobbies[lobbyId].Creator,
+                Usernames = usersInLobby
             });
         }
 
@@ -103,45 +111,52 @@ namespace Trivia.Application
         {
             var user = _userManager.GetUserByConnectionId(connectionId);
 
-            var lobby = _lobbies[user.LobbyId];
+            var lobby = Lobbies[user.LobbyId];
 
             if (lobby == null)
             {
                 throw new ApplicationException("User is not inside a lobby");
             }
-            
-            var game = _gameFactory.Create(configuration =>
+
+            var gameId = _gameManager.CreateGame(configuration =>
             {
                 configuration.LobbyId = user.LobbyId;
                 configuration.Rounds = createGameEvent.Rounds;
                 configuration.RoundDuration = createGameEvent.RoundDuration;
             });
-
-            lobby.CreateGame(game);
+            
+            lobby.ConnectToGame(gameId);
+            
+            _gameManager.PassEventToGame(gameId, Application.Game.Game.GameStateTransition.StartGame);
         }
 
         public async Task PassEventToGame(string connectionId, Game.Game.GameStateTransition transition, string data)
         {
             var user = _userManager.GetUserByConnectionId(connectionId);
 
-            var lobby = _lobbies[user.LobbyId];
+            var lobby = Lobbies[user.LobbyId];
 
             if (lobby == null)
             {
                 throw new ApplicationException("User is not inside a lobby");
             }
 
+            if (lobby.GameId == null)
+            {
+                throw new ApplicationException($"no running Game in lobby {lobby.Id}");
+            }
+
             switch (transition)
             {
                 case Game.Game.GameStateTransition.CollectCategory:
-                    lobby.Game.EnqueueTransition(transition, new CategorySelectedEvent
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategorySelectedEvent
                     {
                         Category = data,
                         Username = user.Name
                     });
                     break;
                 case Game.Game.GameStateTransition.CollectAnswers:
-                    lobby.Game.EnqueueTransition(transition, new AnswerCollectedEvent()
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new AnswerCollectedEvent()
                     {
                         Answer = data,
                         Username = user.Name

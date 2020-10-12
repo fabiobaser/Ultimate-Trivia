@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Trivia.Database.Entities
 {
     public class Question
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Content { get; set; }
         public string Category { get; set; }
         public QuestionType Type { get; set; }

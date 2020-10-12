@@ -42,34 +42,15 @@ namespace Trivia.Hubs
             
             await _lobbyManager.JoinLobbyAsync(lobbyId, username, Context.ConnectionId);
             await Groups.AddToGroupAsync(Context.ConnectionId, lobbyId);
-            
-            var userInLobby = _userManager.GetUsersInLobby(lobbyId);
-
-            // TODO: move to joinLobbyAsync?
-            await Clients.Caller.SendAsync(ClientCallNames.JoinLobby, new JoinLobbyEvent
-            {
-                LobbyId = lobbyId,
-                Usernames = userInLobby.Select(u => u.Name).ToList()
-            });
-            
         }
         
         public async Task CreateLobby(string username)
         {
             _userManager.AddUser(username, Context.ConnectionId);
             
-            var lobby = await _lobbyManager.CreateLobbyAsync();
+            var lobby = await _lobbyManager.CreateLobbyAsync(username);
             await _lobbyManager.JoinLobbyAsync(lobby.Id, username, Context.ConnectionId);
             await Groups.AddToGroupAsync(Context.ConnectionId, lobby.Id);
-
-            var userInLobby = _userManager.GetUsersInLobby(lobby.Id);
-
-            // TODO: move to joinLobbyAsync?
-            await Clients.Caller.SendAsync(ClientCallNames.JoinLobby, new JoinLobbyEvent
-            {
-                LobbyId = lobby.Id,
-                Usernames = userInLobby.Select(u => u.Name).ToList()
-            });
         }
 
         public async Task LeaveLobby()

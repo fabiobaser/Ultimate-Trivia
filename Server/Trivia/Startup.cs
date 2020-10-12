@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -12,6 +13,7 @@ using Trivia.Application;
 using Trivia.Application.Game;
 using Trivia.BackgroundJobs;
 using Trivia.Database;
+using Trivia.HostedServices;
 using Trivia.Hubs;
 using Trivia.Middlewares;
 
@@ -28,11 +30,15 @@ namespace Trivia
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<LobbyManager>();
-            services.AddSingleton<UserManager>();
-            services.AddTransient<GameFactory>();
+            services.AddTransient<LobbyManager>();
+            services.AddTransient<UserManager>();
+
+            services.AddSingleton<UserStore>();
+            services.AddSingleton<LobbyStore>();
 
             services.AddTransient<QuestionRepository>();
+
+            services.AddSingleton<GameManager>();
             
             services.AddUtils();
             services.AddHttpContextAccessor();

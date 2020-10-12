@@ -2,27 +2,21 @@
 
 namespace Trivia.Application
 {
-    public class Lobby : IDisposable
+    public class Lobby
     {
         public string Id { get; set; }
-        public Game.Game Game { get; set; }
+        public string Creator { get; set; }
+        public string GameId { get; set; }
         
-        public Lobby(string lobbyId)
+        public Lobby(string lobbyId, string creator)
         {
+            Creator = creator;
             Id = lobbyId;
         }
 
-        public void CreateGame(Game.Game game)
+        public void ConnectToGame(string gameId)
         {
-            Game?.Dispose();
-
-            Game = game;
-            game.EnqueueTransition(Application.Game.Game.GameStateTransition.StartGame);
-        }
-
-        public void Dispose()
-        {
-            Game?.Dispose();
+            GameId = gameId;
         }
     }
 }

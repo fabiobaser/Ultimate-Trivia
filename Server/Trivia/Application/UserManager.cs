@@ -7,28 +7,30 @@ namespace Trivia.Application
 {
     public class UserManager
     {
-        private readonly ConcurrentDictionary<string, User> _users;
+        private readonly UserStore _userStore;
 
-        public UserManager()
+        private ConcurrentDictionary<string, User> Users => _userStore.Users;
+        
+        public UserManager(UserStore userStore)
         {
-            _users = new ConcurrentDictionary<string, User>();
+            _userStore = userStore;
         }
 
         public List<User> GetAllUsers()
         {
-            return _users.Select(u => u.Value).ToList();
+            return Users.Select(u => u.Value).ToList();
         }
 
         public List<string> GetAllLobbyIds()
         {
-            return _users.Where(kv => kv.Value.LobbyId != null).Select(kv => kv.Value.LobbyId).Distinct().ToList();
+            return Users.Where(kv => kv.Value.LobbyId != null).Select(kv => kv.Value.LobbyId).Distinct().ToList();
         }
         
         public void AddUser(string username, string connectionId)
         {
-            if (!_users.ContainsKey(connectionId))
+            if (!Users.ContainsKey(connectionId))
             {
-                _users[connectionId] = new User
+                Users[connectionId] = new User
                 {
                     Name = username,
                     ConnectionId = connectionId
@@ -38,7 +40,7 @@ namespace Trivia.Application
 
         public void RemoveUser(string connectionId)
         {
-            if (!_users.TryRemove(connectionId, out _))
+            if (!Users.TryRemove(connectionId, out _))
             {
                 throw new Exception($"failed to remove user with connectionId {connectionId}");
             }
@@ -46,24 +48,24 @@ namespace Trivia.Application
 
         public User GetUserByConnectionId(string connectionId)
         {
-            return _users[connectionId];
+            return Users[connectionId];
         }
 
         public List<User> GetUsersInLobby(string lobbyId)
         {
-            return _users.Where(u => u.Value.LobbyId == lobbyId).Select(dict => dict.Value).ToList();
+            return Users.Where(u => u.Value.LobbyId == lobbyId).Select(dict => dict.Value).ToList();
         }
 
         public void JoinLobby(string connectionId, string lobbyId)
         {
-            if (_users.ContainsKey(connectionId))
+            if (Users.ContainsKey(connectionId))
             {
-                if (_users[connectionId].LobbyId != null)
+                if (Users[connectionId].LobbyId != null)
                 {
                     throw new ApplicationException("User already joined a lobby");
                 }
 
-                _users[connectionId].LobbyId = lobbyId;
+                Users[connectionId].LobbyId = lobbyId;
             }
             else
             {
@@ -73,9 +75,9 @@ namespace Trivia.Application
         
         public void LeaveLobby(string connectionId)
         {
-            if (_users.ContainsKey(connectionId))
+            if (Users.ContainsKey(connectionId))
             {
-                _users[connectionId].LobbyId = null;
+                Users[connectionId].LobbyId = null;
             }
             else
             {
