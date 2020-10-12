@@ -1,6 +1,7 @@
 import React, { Component } from "react"
-import { Input, Button, Card, Container, Header } from "semantic-ui-react"
+import { Input, Button, Card, Container, Header, Label } from "semantic-ui-react"
 import { HubConnectionBuilder } from "@microsoft/signalr"
+import SelectButton from "./Components/SelectButton";
 
 export default class App extends Component {
   constructor(props) {
@@ -11,6 +12,9 @@ export default class App extends Component {
       lobbyId: "",
       userArray: [],
       connectedToLobby: false,
+      showSelectableQuestions: false,
+      selectableQuestions : [],
+      possibleAnswers: []
     }
   }
 
@@ -80,20 +84,31 @@ export default class App extends Component {
       console.log(`user ${showCategoriesEvent.username} is choosing a category`)
       console.log(showCategoriesEvent.categories)
 
+      let showSelectableQuestions = false
+
       if(this.state.name == showCategoriesEvent.username) {
-        this.connection.invoke("CategorySelected", "Hausparty")
+        showSelectableQuestions = true
       }
+      this.setState({ selectableQuestions: showCategoriesEvent.categories, showSelectableQuestions })
+
+      console.log(showCategoriesEvent.categories)
+
+      /*if(this.state.name == showCategoriesEvent.username) {
+        this.connection.invoke("CategorySelected", "Hausparty")
+      }*/
     })
 
     this.connection.on("showQuestion", (showQuestionEvent) => {
-      console.log(`Question: ${showQuestionEvent.question}`)
-      console.log(showQuestionEvent.answers)
 
-      this.connection.invoke("AnswerSelected", "aha")
+      this.setState({ possibleAnswers: showQuestionEvent.answers})
+
+      //this.connection.invoke("AnswerSelected", "aha")
     })
 
     this.connection.on("updatePoints", (updatePointsEvent) => {
       console.log(updatePointsEvent.points)
+
+      this.setState({ points: updatePointsEvent.points })
     })
 
     this.connection.on("showFinalResult", (showFinalResultEvent) => {
@@ -121,6 +136,16 @@ export default class App extends Component {
     this.setState(newState)
   }
 
+  handleAnswerSelect = (answer) => {
+    this.connection.invoke("AnswerSelected", answer)
+    this.setState({ possibleAnswers: []})
+  }
+
+  handleQuestionSelect = (question) => {
+    this.connection.invoke("CategorySelected", question)
+    this.setState({ selectableQuestions: []})
+  }
+
   render() {
     return (
       <Container textAlign='center' style={{ paddingTop: "4rem" }}>
@@ -140,7 +165,10 @@ export default class App extends Component {
                 <Card.Content>
                   <Card.Header>Spieler</Card.Header>
                   {this.state.userArray.map((user) => (
-                    <p key={user}>{user}</p>
+                    <Label key={user}>
+                      {user}
+                      <Label.Detail>{(this.state.points || {})[user] || 0}</Label.Detail>
+                    </Label>
                   ))}
                 </Card.Content>
               </Card>
@@ -189,7 +217,7 @@ export default class App extends Component {
                       ? "Verlassen"
                       : "Beitreten",
                     color: this.state.connectedToLobby ? "red" : "green",
-                    basic: true,
+                         basic: true,
                     onClick: this.state.connectedToLobby
                       ? this.leaveLobby
                       : this.joinLobby,
@@ -209,6 +237,16 @@ export default class App extends Component {
         {this.state.lobbyId !== "" && (
           <h1>Einladungs Code: {this.state.lobbyId}</h1>
         )}
+
+        {this.state.showSelectableQuestions && <div>
+          <h2>Wähle eine Frage aus</h2>
+          {this.state.selectableQuestions.map(q => <SelectButton key={q} value={q} handler={this.handleQuestionSelect}/>)}
+        </div>}
+
+        {this.state.possibleAnswers.length > 0 && <div>
+          <h2>Wähle eine Antwort aus</h2>
+          {this.state.possibleAnswers.map(a => <SelectButton key={a} value={a} handler={this.handleAnswerSelect}/>)}
+        </div>}
       </Container>
     )
   }
