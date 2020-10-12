@@ -2,7 +2,8 @@
   "name": "ultimate-trivia-client",
   "version": "0.0.1",
   "scripts": {
-    "dev": "parcel src/index.html"
+    "dev": "parcel --no-cache src/index.html",
+    "server": "dotnet run -p ../Server/Trivia/Trivia.csproj"
   },
   "dependencies": {
     "@microsoft/signalr": "^3.1.8",
@@ -13,3 +14,4 @@
     "semantic-ui-react": "^2.0.0"
   }
 }
+
