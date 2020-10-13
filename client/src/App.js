@@ -93,7 +93,6 @@ export default class App extends Component {
       this.setState({ userArray: userLeftEvent.usernames });
     });
 
-    // TODO : Handle events correctly
     this.connection.on("gameStarted", () => {
       this.setState({ inGame: true });
     });
@@ -116,7 +115,17 @@ export default class App extends Component {
 
       //this.connection.invoke("AnswerSelected", "aha")
     });
+    
+    // TODO: handle correctly
+    this.connection.on("userAnswered", (userAnsweredEvent) => {
+      console.log(`${userAnsweredEvent.username} has answered`);
+    });
 
+    // TODO: handle correctly
+    this.connection.on("highlightCorrectAnswer", (highlightCorrectAnswerEvent) => {
+      console.log(`correct answer was ${highlightCorrectAnswerEvent.correctAnswer}`);
+    });
+    
     this.connection.on("updatePoints", (updatePointsEvent) => {
       console.log(updatePointsEvent.points);
 
@@ -127,7 +136,16 @@ export default class App extends Component {
       console.log(showFinalResultEvent.points);
     });
 
-    // ----------------------------
+    // TODO: handle correctly
+    this.connection.on("error", (errorEvent) => {
+      
+      if(errorEvent.errorCode === "DUPLICATE_USERNAME"){
+        console.error("username already taken")
+        console.error(errorEvent.errorMessage)
+      } else {
+        console.error(errorEvent.errorCode + ' ' + errorEvent.errorMessage)
+      }
+    });
 
     this.connection
       .start()
