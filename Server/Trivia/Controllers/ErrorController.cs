@@ -5,9 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace Trivia.Controllers
 {
     [ApiExplorerSettings(IgnoreApi = true)]
-    public class ErrorsController : ControllerBase
+    public class ErrorsController : BaseApiController
     {
-        [Route("error")]
+        [HttpGet]
+        [HttpPost]
         public IActionResult Error()
         {
             var context = HttpContext.Features.Get<IExceptionHandlerFeature>();

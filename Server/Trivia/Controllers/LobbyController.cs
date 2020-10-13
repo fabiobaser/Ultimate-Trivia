@@ -3,7 +3,7 @@ using Trivia.Application;
 
 namespace Trivia.Controllers
 {
-    public class LobbyController : BaseController
+    public class LobbyController : BaseApiController
     {
         private readonly LobbyManager _lobbyManager;
 

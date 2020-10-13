@@ -2,7 +2,7 @@
 
 namespace Trivia.Database.Entities
 {
-    public class Answer
+    public class Answer : AuditableEntity
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Content { get; set; }

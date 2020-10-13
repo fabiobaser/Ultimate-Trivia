@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Quartz.Logging;
 using Trivia.Application.Game;
 using Trivia.Constants;
 using Trivia.Exceptions;
@@ -19,18 +18,18 @@ namespace Trivia.Application
     {
         private readonly LobbyStore _lobbyStore;
         private readonly IInviteCodeGenerator _inviteCodeGenerator;
-        private readonly UserManager _userManager;
+        private readonly PlayerManager _playerManager;
         private readonly IHubContext<TriviaGameHub> _hubContext;
         private readonly GameManager _gameManager;
         private readonly ILogger<LobbyManager> _logger;
 
         private ConcurrentDictionary<string, Lobby> Lobbies => _lobbyStore.Lobbies;
         
-        public LobbyManager(LobbyStore lobbyStore, IInviteCodeGenerator inviteCodeGenerator, UserManager userManager, IHubContext<TriviaGameHub> hubContext, GameManager gameManager, ILogger<LobbyManager> logger)
+        public LobbyManager(LobbyStore lobbyStore, IInviteCodeGenerator inviteCodeGenerator, PlayerManager playerManager, IHubContext<TriviaGameHub> hubContext, GameManager gameManager, ILogger<LobbyManager> logger)
         {
             _lobbyStore = lobbyStore;
             _inviteCodeGenerator = inviteCodeGenerator;
-            _userManager = userManager;
+            _playerManager = playerManager;
             _hubContext = hubContext;
             _gameManager = gameManager;
             _logger = logger;
@@ -56,7 +55,7 @@ namespace Trivia.Application
             }
         }
         
-        public async Task<Lobby> CreateLobbyAsync(string username)
+        public async Task<Lobby> CreateLobbyAsync(string playerName)
         {
             string lobbyId;
             do
@@ -65,7 +64,7 @@ namespace Trivia.Application
             } 
             while (Lobbies.ContainsKey(lobbyId));
             
-            var lobby = new Lobby(lobbyId, username);
+            var lobby = new Lobby(lobbyId, playerName);
             Lobbies[lobbyId] = lobby;
 
             return lobby;
@@ -78,56 +77,56 @@ namespace Trivia.Application
                 throw new ApplicationException("lobby doesnt exist");
             }
 
-            var usersInLobby = _userManager.GetUsersInLobby(lobbyId).Select(u => u.Name).ToList();
+            var playerInLobby = _playerManager.GetPlayerInLobby(lobbyId).Select(u => u.Name).ToList();
 
-            if (usersInLobby.Contains(username))
+            if (playerInLobby.Contains(username))
             {
                 throw new DuplicateUserNameException("Username already taken");
             }
             
-            _userManager.JoinLobby(connectionId, lobbyId);
+            _playerManager.JoinLobby(connectionId, lobbyId);
 
-            usersInLobby = _userManager.GetUsersInLobby(lobbyId).Select(u => u.Name).ToList();
+            playerInLobby = _playerManager.GetPlayerInLobby(lobbyId).Select(u => u.Name).ToList();
 
             await _hubContext.Clients.Group(lobbyId).SendAsync(RpcFunctionNames.UserJoinedLobby, new UserJoinedEvent
             {
                 NewUser = username,
-                Usernames = usersInLobby
+                Usernames = playerInLobby
             });
             
             await _hubContext.Clients.Client(connectionId).SendAsync(RpcFunctionNames.JoinLobby, new JoinLobbyEvent
             {
                 LobbyId = lobbyId,
                 Creator = Lobbies[lobbyId].Creator,
-                Usernames = usersInLobby
+                Usernames = playerInLobby
             });
         }
 
         public async Task LeaveLobbyAsync(string connectionId)
         {
-            var user = _userManager.GetUserByConnectionId(connectionId);
+            var user = _playerManager.GetPlayerByConnectionId(connectionId);
             if (user.LobbyId == null)
             {
                 throw new ApplicationException("user is not in a lobby");
             }
             
             var leftLobbyId = user.LobbyId;
-            _userManager.LeaveLobby(connectionId);
+            _playerManager.LeaveLobby(connectionId);
             
-            var usersInLobby = _userManager.GetUsersInLobby(leftLobbyId);
+            var playerInLobby = _playerManager.GetPlayerInLobby(leftLobbyId);
             
             await _hubContext.Clients.Group(leftLobbyId).SendAsync(RpcFunctionNames.UserLeftLobby, new UserLeftEvent
             {
                 LeavingUser = user.Name,
-                Usernames = usersInLobby.Select(u => u.Name).ToList()
+                Usernames = playerInLobby.Select(u => u.Name).ToList()
             });
         }
 
         public async Task CreateGameAsync(string connectionId, CreateGameEvent createGameEvent)
         {
-            var user = _userManager.GetUserByConnectionId(connectionId);
+            var player = _playerManager.GetPlayerByConnectionId(connectionId);
 
-            var lobby = Lobbies[user.LobbyId];
+            var lobby = Lobbies[player.LobbyId];
 
             if (lobby == null)
             {
@@ -136,7 +135,7 @@ namespace Trivia.Application
 
             var gameId = _gameManager.CreateGame(configuration =>
             {
-                configuration.LobbyId = user.LobbyId;
+                configuration.LobbyId = player.LobbyId;
                 configuration.Rounds = createGameEvent.Rounds;
                 configuration.RoundDuration = createGameEvent.RoundDuration;
             });
@@ -148,9 +147,9 @@ namespace Trivia.Application
 
         public async Task PassEventToGame(string connectionId, Game.Game.GameStateTransition transition, string data)
         {
-            var user = _userManager.GetUserByConnectionId(connectionId);
+            var player = _playerManager.GetPlayerByConnectionId(connectionId);
 
-            var lobby = Lobbies[user.LobbyId];
+            var lobby = Lobbies[player.LobbyId];
 
             if (lobby == null)
             {
@@ -168,14 +167,14 @@ namespace Trivia.Application
                     _gameManager.PassEventToGame(lobby.GameId, transition, new CategorySelectedEvent
                     {
                         Category = data,
-                        Username = user.Name
+                        Username = player.Name
                     });
                     break;
                 case Game.Game.GameStateTransition.CollectAnswers:
                     _gameManager.PassEventToGame(lobby.GameId, transition, new AnswerCollectedEvent()
                     {
                         Answer = data,
-                        Username = user.Name
+                        Username = player.Name
                     });
                     break;
             }

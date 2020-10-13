@@ -1,12 +1,14 @@
 ﻿using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Trivia.Controllers
 {
     [Produces(MediaTypeNames.Application.Json)]
     [ApiController]
+    [AllowAnonymous] // TODO require auth
     [Route("api/v{version:apiVersion}/[controller]")]
-    public abstract class BaseController : ControllerBase
+    public abstract class BaseApiController : ControllerBase
     {
     }
 }

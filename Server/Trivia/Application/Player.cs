@@ -1,6 +1,6 @@
 ﻿namespace Trivia.Application
 {
-    public class User
+    public class Player
     {
         public string Name { get; set; }
         public string ConnectionId { get; set; }

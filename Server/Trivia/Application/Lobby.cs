@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Trivia.Application
+﻿namespace Trivia.Application
 {
     public class Lobby
     {

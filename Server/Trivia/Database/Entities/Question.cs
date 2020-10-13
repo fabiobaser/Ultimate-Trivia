@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Trivia.Database.Entities
 {
-    public class Question
+    public class Question : AuditableEntity
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Content { get; set; }

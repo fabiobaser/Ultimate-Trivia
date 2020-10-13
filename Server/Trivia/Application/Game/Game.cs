@@ -55,12 +55,12 @@ namespace Trivia.Application.Game
                 public DateTimeOffset AnswerGivenAt { get; set; }
             }
             public int CurrentRound { get; set; }
-            public string CurrentUser { get; set; }
+            public string CurrentPlayer { get; set; }
             public DateTimeOffset QuestionStartedAt { get; set; }
             public string CorrectAnswer { get; set; }
-            public List<User> Users { get; set; }
+            public List<Player> Users { get; set; }
             public Dictionary<string, int> Points { get; set; } = new Dictionary<string, int>();
-            public Dictionary<string, Answer> UserAnswers { get; set; } = new Dictionary<string, Answer>();
+            public Dictionary<string, Answer> PlayerAnswers { get; set; } = new Dictionary<string, Answer>();
             public string Category { get; set; }
 
         }
@@ -68,18 +68,18 @@ namespace Trivia.Application.Game
         
         private readonly IHubContext<TriviaGameHub> _hubContext;
         private readonly IDateProvider _dateProvider;
-        private readonly UserManager _userManager;
+        private readonly PlayerManager _playerManager;
         private readonly QuestionRepository _questionRepository;
         private readonly GameConfiguration _configuration;
         
         public string Id { get; set; } = Guid.NewGuid().ToString();
         private GameData GameStateData;
         
-        public Game(ILogger<Game> logger, IHubContext<TriviaGameHub> hubContext, IDateProvider dateProvider, UserManager userManager, QuestionRepository questionRepository, GameConfiguration configuration) : base(logger)
+        public Game(ILogger<Game> logger, IHubContext<TriviaGameHub> hubContext, IDateProvider dateProvider, PlayerManager playerManager, QuestionRepository questionRepository, GameConfiguration configuration) : base(logger)
         {
             _hubContext = hubContext;
             _dateProvider = dateProvider;
-            _userManager = userManager;
+            _playerManager = playerManager;
             _questionRepository = questionRepository;
             _configuration = configuration;
         }
@@ -154,7 +154,7 @@ namespace Trivia.Application.Game
         
         private async Task StartingNewRoundEnter(object data, CancellationToken ct)
         {
-            var users = _userManager.GetUsersInLobby(_configuration.LobbyId);
+            var users = _playerManager.GetPlayerInLobby(_configuration.LobbyId);
 
             if (users.Count == 0)
             {
@@ -163,13 +163,13 @@ namespace Trivia.Application.Game
             }
             
             GameStateData.Users = users;
-            GameStateData.UserAnswers = new Dictionary<string, GameData.Answer>(); // clear answers from last round
+            GameStateData.PlayerAnswers = new Dictionary<string, GameData.Answer>(); // clear answers from last round
             
             
             var orderedUsers = users.OrderBy(u => u.Name).ToList();
 
             // get next user in alphabetical order, return null when last user was reached
-            var next = orderedUsers.FirstOrDefault(u => string.CompareOrdinal(u.Name, GameStateData.CurrentUser) > 0);
+            var next = orderedUsers.FirstOrDefault(u => string.CompareOrdinal(u.Name, GameStateData.CurrentPlayer) > 0);
 
             if (next == null)
             {
@@ -185,7 +185,7 @@ namespace Trivia.Application.Game
                 return;
             }
             
-            GameStateData.CurrentUser = next.Name;
+            GameStateData.CurrentPlayer = next.Name;
 
             await MoveNext(GameStateTransition.ShowCategories, ct);
         }
@@ -196,7 +196,7 @@ namespace Trivia.Application.Game
             
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowCategories, new ShowCategoriesEvent
             {
-                Username = GameStateData.CurrentUser,
+                Username = GameStateData.CurrentPlayer,
                 Categories = categories
             }, ct);
 
@@ -207,9 +207,9 @@ namespace Trivia.Application.Game
         {
             if (data is CategorySelectedEvent categorySelectedEvent)
             {
-                if (categorySelectedEvent.Username != GameStateData.CurrentUser)    // if some other user than current user choose a category go back to waiting for correct event
+                if (categorySelectedEvent.Username != GameStateData.CurrentPlayer)    // if some other user than current user choose a category go back to waiting for correct event
                 {
-                    Logger.LogWarning("{username} tried to select a category, but it is {currentUser}´s turn", categorySelectedEvent.Username, GameStateData.CurrentUser);
+                    Logger.LogWarning("{username} tried to select a category, but it is {currentUser}´s turn", categorySelectedEvent.Username, GameStateData.CurrentPlayer);
                     await MoveNext(GameStateTransition.WaitForCategory, ct);
                 }
                 else
@@ -251,18 +251,18 @@ namespace Trivia.Application.Game
         
         private async Task CollectingAnswerEnter(object data, CancellationToken ct)
         {
-            var users = _userManager.GetUsersInLobby(_configuration.LobbyId);
+            var players = _playerManager.GetPlayerInLobby(_configuration.LobbyId);
 
-            if (users.Count == 0)
+            if (players.Count == 0)
             {
                 await MoveNext(StateMachineBaseCommand.Done, ct);
                 return;
             }
-            GameStateData.Users = users;
+            GameStateData.Users = players;
             
             if (data is AnswerCollectedEvent answerCollectedEvent)
             {
-                GameStateData.UserAnswers[answerCollectedEvent.Username] = new GameData.Answer
+                GameStateData.PlayerAnswers[answerCollectedEvent.Username] = new GameData.Answer
                 {
                     Content = answerCollectedEvent.Answer,
                     AnswerGivenAt = _dateProvider.Now
@@ -274,10 +274,10 @@ namespace Trivia.Application.Game
                     new UserAnsweredEvent
                     {
                         Username = answerCollectedEvent.Username,
-                        RemainingUsers = GameStateData.Users.Where(u => !GameStateData.UserAnswers.ContainsKey(u.Name)).Select(u => u.Name).ToList()
+                        RemainingUsers = GameStateData.Users.Where(u => !GameStateData.PlayerAnswers.ContainsKey(u.Name)).Select(u => u.Name).ToList()
                     }, cancellationToken: ct);
                 
-                if (GameStateData.Users.Any(u => !GameStateData.UserAnswers.ContainsKey(u.Name)))
+                if (GameStateData.Users.Any(u => !GameStateData.PlayerAnswers.ContainsKey(u.Name)))
                 {
                     await MoveNext(GameStateTransition.WaitForAnswers, ct);
                 }
@@ -298,7 +298,7 @@ namespace Trivia.Application.Game
                 new HighlightCorrectAnswerEvent
                 {
                     CorrectAnswer = GameStateData.CorrectAnswer,
-                    UserAnswers = GameStateData.UserAnswers.ToDictionary(kv => kv.Key, kv => kv.Value.Content)
+                    UserAnswers = GameStateData.PlayerAnswers.ToDictionary(kv => kv.Key, kv => kv.Value.Content)
                 }, cancellationToken: ct);
 
             await Task.Delay(3000, ct);
@@ -308,22 +308,22 @@ namespace Trivia.Application.Game
         
         private async Task CalculatingPointsEnter(object data, CancellationToken ct)
         {
-            var correctAnswers = GameStateData.UserAnswers
+            var correctAnswers = GameStateData.PlayerAnswers
                 .Where(a => a.Value.Content == GameStateData.CorrectAnswer)
                 .OrderBy(a => a.Value.AnswerGivenAt)
                 .ToList();
 
             for (var i = 0; i < correctAnswers.Count; i++)
             {
-                var userAnswerPair = correctAnswers[i];
+                var answerPair = correctAnswers[i];
 
-                if (GameStateData.Points.ContainsKey(userAnswerPair.Key))
+                if (GameStateData.Points.ContainsKey(answerPair.Key))
                 {
-                    GameStateData.Points[userAnswerPair.Key] += GameStateData.Users.Count - i;
+                    GameStateData.Points[answerPair.Key] += GameStateData.Users.Count - i;
                 }
                 else
                 {
-                    GameStateData.Points[userAnswerPair.Key] = GameStateData.Users.Count - i;
+                    GameStateData.Points[answerPair.Key] = GameStateData.Users.Count - i;
                 }
             }
 

@@ -1,20 +1,24 @@
 using System.Text.Json;
 using BackgroundScheduler;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Trivia.Application;
-using Trivia.Application.Game;
 using Trivia.BackgroundJobs;
+using Trivia.Constants;
 using Trivia.Database;
 using Trivia.Hubs;
 using Trivia.Middlewares;
+using Trivia.Services;
 
 namespace Trivia
 {
@@ -30,13 +34,12 @@ namespace Trivia
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddTransient<LobbyManager>();
-            services.AddTransient<UserManager>();
-
-            services.AddSingleton<UserStore>();
-            services.AddSingleton<LobbyStore>();
-
+            services.AddTransient<PlayerManager>();
             services.AddTransient<QuestionRepository>();
-
+            services.AddTransient<ICurrentUserService, CurrentUserService>();
+            
+            services.AddSingleton<PlayerStore>();
+            services.AddSingleton<LobbyStore>();
             services.AddSingleton<GameManager>();
             
             services.AddUtils();
@@ -62,7 +65,15 @@ namespace Trivia
                 options
                     .AddDefaultPolicy(builder =>
                         builder
-                            .WithOrigins("http://localhost:1234", "http://localhost:5000", "http://marceljenner.com:5000", "http://marceljenner.com:1234")
+                            .WithOrigins(
+                                "http://localhost:1234", 
+                                "https://localhost:1234", 
+                                "http://marceljenner.com:1234",
+                                "https://marceljenner.com:1234",
+                                "http://localhost:5000", 
+                                "https://localhost:5000", 
+                                "http://marceljenner.com:5000",
+                                "https://marceljenner.com:5000")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials()));
@@ -78,20 +89,54 @@ namespace Trivia
 
             services.AddBackgroundScheduler()
                 .AddJob<CleanOldLobbiesJob>(_configuration);
+
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+                })
+                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+                {
+                    options.Cookie.Name = CookieNames.Identity;
+                })
+                .AddGoogle(GoogleDefaults.AuthenticationScheme,options =>
+                {
+                    options.ClientId = "116681063698-gnuds2j676l6rutblab6o8umuqs6m8ra.apps.googleusercontent.com";
+                    options.ClientSecret = "RjLr2mkyMjiEXRRYaV8TKmMp";
+
+                    options.CorrelationCookie.SameSite = SameSiteMode.None;
+                    
+                    options.Events.OnRemoteFailure = async context =>
+                    {
+
+                    };
+                });
+
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("admin", builder =>
+                {
+                    builder.RequireClaim(Claims.UltimateTriviaAdmin);
+                });
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             app.UseCors();
+            app.UseHttpsRedirection();
+
             app.UseOpenApi();
-            app.UseExceptionHandler("/error");
+
+            app.UseExceptionHandler("/api/error");
             app.UseMiddleware<LoggingMiddleware>();
-            
-            // app.UseHttpsRedirection();
+
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.UseStaticFiles();
-            app.UseRouting();
-
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

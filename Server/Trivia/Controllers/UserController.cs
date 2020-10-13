@@ -1,18 +1,19 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Trivia.Application;
 using Trivia.BackgroundJobs;
 
 namespace Trivia.Controllers
 {
-    public class UserController : BaseController
+    public class UserController : BaseApiController
     {
-        private readonly UserManager _userManager;
+        private readonly PlayerManager _playerManager;
         private readonly CleanOldLobbiesJob _job;
         private readonly LobbyManager _lobbyManager;
 
-        public UserController(UserManager userManager, CleanOldLobbiesJob job)
+        public UserController(PlayerManager playerManager, CleanOldLobbiesJob job)
         {
-            _userManager = userManager;
+            _playerManager = playerManager;
             _job = job;
         }
         
@@ -20,7 +21,7 @@ namespace Trivia.Controllers
         [HttpGet()]
         public IActionResult GetAllLobbiesAsync()
         {
-            return Ok(_userManager.GetAllUsers());
+            return Ok(_playerManager.GetAllPlayers());
         }
 
         [HttpGet("remove-old-lobbies")]

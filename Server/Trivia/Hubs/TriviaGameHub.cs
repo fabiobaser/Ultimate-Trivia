@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -8,19 +7,18 @@ using Trivia.Application.Game;
 using Trivia.Constants;
 using Trivia.Exceptions;
 using Trivia.Hubs.Events;
-using Trivia.Services;
 
 namespace Trivia.Hubs
 {
     public class TriviaGameHub : Hub
     {
-        private readonly UserManager _userManager;
+        private readonly PlayerManager _playerManager;
         private readonly ILogger<TriviaGameHub> _logger;
         private readonly LobbyManager _lobbyManager;
 
-        public TriviaGameHub(LobbyManager lobbyManager, UserManager userManager, ILogger<TriviaGameHub> logger)
+        public TriviaGameHub(LobbyManager lobbyManager, PlayerManager playerManager, ILogger<TriviaGameHub> logger)
         {
-            _userManager = userManager;
+            _playerManager = playerManager;
             _logger = logger;
             _lobbyManager = lobbyManager;
         }
@@ -29,7 +27,7 @@ namespace Trivia.Hubs
         {
             _logger.LogInformation("Client {connectionId} disconnected", Context.ConnectionId);
             await LeaveLobby();
-            _userManager.RemoveUser(Context.ConnectionId);
+            _playerManager.RemovePlayer(Context.ConnectionId);
             await base.OnDisconnectedAsync(exception);
         }
         
@@ -37,11 +35,11 @@ namespace Trivia.Hubs
         {
             try
             {
-                var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
+                var player = _playerManager.GetPlayerByConnectionId(Context.ConnectionId);
             
-                _logger.LogDebug("{username} posted message {message}", user.Name, message);
+                _logger.LogDebug("{username} posted message {message}", player.Name, message);
             
-                await Clients.Group(user.LobbyId).SendAsync(RpcFunctionNames.BroadcastMessage, user.Name, message);
+                await Clients.Group(player.LobbyId).SendAsync(RpcFunctionNames.BroadcastMessage, player.Name, message);
             }
             catch (Exception e)
             {
@@ -54,7 +52,7 @@ namespace Trivia.Hubs
             try
             {
                 _logger.LogDebug("{username} joined lobby {lobbyId}", username, lobbyId);
-                _userManager.AddUser(username, Context.ConnectionId);
+                _playerManager.AddPlayer(username, Context.ConnectionId);
             
                 await _lobbyManager.JoinLobbyAsync(lobbyId, username, Context.ConnectionId);
                 await Groups.AddToGroupAsync(Context.ConnectionId, lobbyId);
@@ -69,7 +67,7 @@ namespace Trivia.Hubs
         {
             try
             {
-                _userManager.AddUser(username, Context.ConnectionId);
+                _playerManager.AddPlayer(username, Context.ConnectionId);
             
                 var lobby = await _lobbyManager.CreateLobbyAsync(username);
             
@@ -89,11 +87,11 @@ namespace Trivia.Hubs
         {
             try
             {
-                var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
-                if (user.LobbyId != null)
+                var player = _playerManager.GetPlayerByConnectionId(Context.ConnectionId);
+                if (player.LobbyId != null)
                 {
-                    _logger.LogDebug("{username} left lobby {lobbyId}", user.Name, user.LobbyId);
-                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, user.LobbyId);
+                    _logger.LogDebug("{username} left lobby {lobbyId}", player.Name, player.LobbyId);
+                    await Groups.RemoveFromGroupAsync(Context.ConnectionId, player.LobbyId);
                     await _lobbyManager.LeaveLobbyAsync(Context.ConnectionId);
                     await Clients.Caller.SendAsync(RpcFunctionNames.LeaveLobby);
                 }

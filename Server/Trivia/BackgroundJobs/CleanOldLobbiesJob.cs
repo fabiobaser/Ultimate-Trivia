@@ -7,18 +7,18 @@ namespace Trivia.BackgroundJobs
 {
     public class CleanOldLobbiesJob : IJob
     {
-        private readonly UserManager _userManager;
+        private readonly PlayerManager _playerManager;
         private readonly LobbyManager _lobbyManager;
 
-        public CleanOldLobbiesJob(UserManager userManager, LobbyManager lobbyManager)
+        public CleanOldLobbiesJob(PlayerManager playerManager, LobbyManager lobbyManager)
         {
-            _userManager = userManager;
+            _playerManager = playerManager;
             _lobbyManager = lobbyManager;
         }
         
         public Task Execute(IJobExecutionContext context)
         {
-            var usedLobbies = _userManager.GetAllLobbyIds();
+            var usedLobbies = _playerManager.GetAllLobbyIds();
 
             var existingLobbies = _lobbyManager.GetAllLobbyNames();
 

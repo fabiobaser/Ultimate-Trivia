@@ -9,13 +9,15 @@ namespace Trivia.Database
     public class ApplicationDbContext : DbContext
     {
         private readonly IDateProvider _dateProvider;
+        private readonly ICurrentUserService _currentUserService;
 
         public DbSet<Question> Questions { get; set; }
         public DbSet<Answer> Answers { get; set; }
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IDateProvider dateProvider) : base(options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IDateProvider dateProvider, ICurrentUserService currentUserService) : base(options)
         {
             _dateProvider = dateProvider;
+            _currentUserService = currentUserService;
         }
         
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -45,9 +47,11 @@ namespace Trivia.Database
                 {
                     case EntityState.Added:
                         entry.Entity.Created = _dateProvider.Now;
+                        entry.Entity.CreatedBy = _currentUserService.GetCurrentUser()?.Name;
                         break;
                     case EntityState.Modified:
                         entry.Entity.LastModified = _dateProvider.Now;
+                        entry.Entity.LastModifiedBy = _currentUserService.GetCurrentUser()?.Name;
                         break;
                 }
             }

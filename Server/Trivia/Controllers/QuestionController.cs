@@ -7,7 +7,7 @@ using Trivia.Database.Entities;
 
 namespace Trivia.Controllers
 {
-    public class QuestionController : BaseController
+    public class QuestionController : BaseApiController
     {
         private readonly ApplicationDbContext _context;
 
