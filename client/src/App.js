@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Input, Button, Container, Header, Modal } from "semantic-ui-react";
+import { Input, Image, Container, Header, Modal } from "semantic-ui-react";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 import faker from "faker";
 import JoinCreateGame from "./Components/JoinCreateGame";
@@ -66,7 +66,7 @@ export default class App extends Component {
     });
 
     this.connection.on("joinLobby", (joinLobbyEvent) => {
-      this.pushtToChat("", "You joined the lobby");
+      this.pushtToChat("", "Du bist dem Spiel beigetreten");
       this.setState({
         userArray: joinLobbyEvent.usernames,
         connectedToLobby: true,
@@ -102,6 +102,11 @@ export default class App extends Component {
         `user ${showCategoriesEvent.username} is choosing a category`
       );
 
+      this.pushtToChat(
+        "",
+        `${showCategoriesEvent.username} wählt ein Thema aus`
+      );
+
       if (showCategoriesEvent.username === this.state.name) {
         this.setState({ topics: showCategoriesEvent.categories });
       }
@@ -112,8 +117,6 @@ export default class App extends Component {
         possibleAnswers: showQuestionEvent.answers,
         question: showQuestionEvent.question,
       });
-
-      //this.connection.invoke("AnswerSelected", "aha")
     });
     
     // TODO: handle correctly
@@ -127,13 +130,12 @@ export default class App extends Component {
     });
     
     this.connection.on("updatePoints", (updatePointsEvent) => {
-      console.log(updatePointsEvent.points);
-
       this.setState({ points: updatePointsEvent.points });
     });
 
     this.connection.on("showFinalResult", (showFinalResultEvent) => {
-      console.log(showFinalResultEvent.points);
+      console.log("Final result: ", showFinalResultEvent.points);
+      this.pushtToChat("", "Spiel zuende");
     });
 
     // TODO: handle correctly
@@ -230,9 +232,19 @@ export default class App extends Component {
         <h1 style={{ width: "100%", textAlign: "center" }}>{lobbyId}</h1>
 
         <Modal size={"mini"} open={this.state.nameModalOpen}>
-          <Modal.Header>Gib einen Namen ein</Modal.Header>
+          <Modal.Header style={{ paddingTop: "2rem" }}>
+            Gib einen Namen ein{" "}
+            <Image
+              style={{ float: "right" }}
+              src={`https://avatar.tobi.sh/${name}.svg?text=${name
+                .slice(0, 2)
+                .toUpperCase()}`}
+              avatar
+            />
+          </Modal.Header>
           <Modal.Content>
             <p>Zum Spielen brauchst du einen Namen</p>
+
             <Input
               fluid
               name={"name"}

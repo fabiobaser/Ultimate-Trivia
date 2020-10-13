@@ -1,6 +1,15 @@
 import React, { Component } from "react";
-import { Card, Grid, Label, List, Feed, Button } from "semantic-ui-react";
+import {
+  Card,
+  Grid,
+  Label,
+  List,
+  Feed,
+  Button,
+  Image,
+} from "semantic-ui-react";
 import SelectButton from "./SelectButton";
+import _ from "lodash";
 
 export default class Game extends Component {
   render() {
@@ -19,20 +28,35 @@ export default class Game extends Component {
       inGame,
     } = this.props;
 
+    console.log(points);
+
     return (
       <Grid celled="internally">
         <Grid.Row>
-          <Grid.Column width={3}>
+          <Grid.Column width={4}>
             {userArray.length > 0 && (
               <Card>
                 <Card.Content>
                   <Card.Header>Spieler</Card.Header>
                   <List>
-                    {userArray.map((user) => (
+                    {userArray.map((user, userIndex) => (
                       <List.Item key={user}>
                         <Label className="fluid" basic={name === user}>
+                          {userIndex + 1 + "."}
+                          <Image
+                            src={`https://avatar.tobi.sh/${name}.svg?text=${name
+                              .slice(0, 2)
+                              .toUpperCase()}`}
+                            avatar
+                            style={{
+                              marginRight: "0.5rem",
+                              marginLeft: "0.5rem",
+                            }}
+                          />
                           {user}
-                          <Label.Detail style={{ float: "right" }}>
+                          <Label.Detail
+                            style={{ float: "right", lineHeight: "26px" }}
+                          >
                             {(points || {})[user] || 0}
                           </Label.Detail>
                         </Label>
@@ -43,7 +67,7 @@ export default class Game extends Component {
               </Card>
             )}
           </Grid.Column>
-          <Grid.Column width={10}>
+          <Grid.Column width={8}>
             {topics.length > 0 && (
               <div>
                 <h2>Wähle eine Frage aus</h2>
@@ -66,7 +90,7 @@ export default class Game extends Component {
               </div>
             )}
           </Grid.Column>
-          <Grid.Column width={3}>
+          <Grid.Column width={4}>
             <Button.Group>
               {!inGame && (
                 <Button basic color={"green"} onClick={createGame}>
