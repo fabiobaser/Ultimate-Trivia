@@ -63,7 +63,9 @@ namespace Trivia
                 options
                     .AddDefaultPolicy(builder =>
                         builder
-                            .WithOrigins("http://localhost:1234", "http://localhost:5000", "http://marceljenner.com:5000", "http://marceljenner.com:1234", "http://marceljenner.com")
+                            .WithOrigins("http://localhost:1234", "http://localhost:5000", "http://marceljenner.com:5000", "http://marceljenner.com:1234")
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
                             .AllowCredentials()));
 
             services.AddSignalR()
@@ -81,6 +83,7 @@ namespace Trivia
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseCors();
             app.UseOpenApi();
             app.UseExceptionHandler("/error");
             app.UseMiddleware<LoggingMiddleware>();
@@ -89,7 +92,6 @@ namespace Trivia
 
             app.UseStaticFiles();
             app.UseRouting();
-            app.UseCors();
 
             app.UseEndpoints(endpoints =>
             {
