@@ -1,8 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Trivia.Application.Game;
 
-namespace Trivia.HostedServices
+namespace Trivia.Application.Game
 {
     public class GameHost : IDisposable
     {

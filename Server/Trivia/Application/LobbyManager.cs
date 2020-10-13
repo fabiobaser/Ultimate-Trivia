@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Quartz.Logging;
 using Trivia.Application.Game;
-using Trivia.HostedServices;
+using Trivia.Constants;
+using Trivia.Exceptions;
 using Trivia.Hubs;
 using Trivia.Hubs.Events;
 using Trivia.Services;
@@ -77,19 +78,24 @@ namespace Trivia.Application
                 throw new ApplicationException("lobby doesnt exist");
             }
 
-            // TODO: check if username already exists in lobby
+            var usersInLobby = _userManager.GetUsersInLobby(lobbyId).Select(u => u.Name).ToList();
+
+            if (usersInLobby.Contains(username))
+            {
+                throw new DuplicateUserNameException("Username already taken");
+            }
             
             _userManager.JoinLobby(connectionId, lobbyId);
 
-            var usersInLobby = _userManager.GetUsersInLobby(lobbyId).Select(u => u.Name).ToList();
+            usersInLobby = _userManager.GetUsersInLobby(lobbyId).Select(u => u.Name).ToList();
 
-            await _hubContext.Clients.Group(lobbyId).SendAsync(ClientCallNames.UserJoinedLobby, new UserJoinedEvent
+            await _hubContext.Clients.Group(lobbyId).SendAsync(RpcFunctionNames.UserJoinedLobby, new UserJoinedEvent
             {
                 NewUser = username,
                 Usernames = usersInLobby
             });
             
-            await _hubContext.Clients.Client(connectionId).SendAsync(ClientCallNames.JoinLobby, new JoinLobbyEvent
+            await _hubContext.Clients.Client(connectionId).SendAsync(RpcFunctionNames.JoinLobby, new JoinLobbyEvent
             {
                 LobbyId = lobbyId,
                 Creator = Lobbies[lobbyId].Creator,
@@ -110,7 +116,7 @@ namespace Trivia.Application
             
             var usersInLobby = _userManager.GetUsersInLobby(leftLobbyId);
             
-            await _hubContext.Clients.Group(leftLobbyId).SendAsync(ClientCallNames.UserLeftLobby, new UserLeftEvent
+            await _hubContext.Clients.Group(leftLobbyId).SendAsync(RpcFunctionNames.UserLeftLobby, new UserLeftEvent
             {
                 LeavingUser = user.Name,
                 Usernames = usersInLobby.Select(u => u.Name).ToList()

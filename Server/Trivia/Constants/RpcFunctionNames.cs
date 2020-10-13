@@ -1,6 +1,6 @@
-﻿namespace Trivia
+﻿namespace Trivia.Constants
 {
-    public class ClientCallNames
+    public class RpcFunctionNames
     {
         public const string BroadcastMessage = "broadcastMessage";
         public const string JoinLobby = "joinLobby";
@@ -14,5 +14,7 @@
         public const string HighlightCorrectAnswer = "highlightCorrectAnswer";
         public const string UpdatePoints = "updatePoints";
         public const string ShowFinalResult = "showFinalResult";
+
+        public const string Error = "error";
     }
 }

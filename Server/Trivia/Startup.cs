@@ -13,7 +13,6 @@ using Trivia.Application;
 using Trivia.Application.Game;
 using Trivia.BackgroundJobs;
 using Trivia.Database;
-using Trivia.HostedServices;
 using Trivia.Hubs;
 using Trivia.Middlewares;
 

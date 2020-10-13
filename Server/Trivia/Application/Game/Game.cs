@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using StateMachine;
+using Trivia.Constants;
 using Trivia.Database;
 using Trivia.Hubs;
 using Trivia.Hubs.Events;
@@ -147,7 +148,7 @@ namespace Trivia.Application.Game
                 CurrentRound = 1
             };
             
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.GameStarted, cancellationToken: ct);
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.GameStarted, cancellationToken: ct);
             await MoveNext(GameStateTransition.StartNewRound, ct);
         }
         
@@ -193,7 +194,7 @@ namespace Trivia.Application.Game
         {
             var categories = await _questionRepository.GetRandomCategories(3);
             
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.ShowCategories, new ShowCategoriesEvent
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowCategories, new ShowCategoriesEvent
             {
                 Username = GameStateData.CurrentUser,
                 Categories = categories
@@ -238,7 +239,7 @@ namespace Trivia.Application.Game
                 throw new ApplicationException($"no correct answer for question {question.Id}");
             }
             
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.ShowQuestion,
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowQuestion,
                 new ShowQuestionEvent
                 {
                     Question = question.Content,
@@ -269,6 +270,13 @@ namespace Trivia.Application.Game
 
                 Logger.LogDebug("{username} selected answer {answer}", answerCollectedEvent.Username, answerCollectedEvent.Answer);
                 
+                await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.UserAnswered,
+                    new UserAnsweredEvent
+                    {
+                        Username = answerCollectedEvent.Username,
+                        RemainingUsers = GameStateData.Users.Where(u => !GameStateData.UserAnswers.ContainsKey(u.Name)).Select(u => u.Name).ToList()
+                    }, cancellationToken: ct);
+                
                 if (GameStateData.Users.Any(u => !GameStateData.UserAnswers.ContainsKey(u.Name)))
                 {
                     await MoveNext(GameStateTransition.WaitForAnswers, ct);
@@ -282,16 +290,11 @@ namespace Trivia.Application.Game
             {
                 throw new ApplicationException($"unexpected data received {data.GetType()}");
             }
-
-            // TODO: event for answer progress?
-            
-            // _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.UserAnswered, )
-            
         }
         
         private async Task HighlightingCorrectAnswerEnter(object data, CancellationToken ct)
         {
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.HighlightCorrectAnswer,
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.HighlightCorrectAnswer,
                 new HighlightCorrectAnswerEvent
                 {
                     CorrectAnswer = GameStateData.CorrectAnswer,
@@ -324,7 +327,7 @@ namespace Trivia.Application.Game
                 }
             }
 
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.UpdatePoints,
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.UpdatePoints,
                 new UpdatePointsEvent
                 {
                     Points = GameStateData.Points
@@ -335,7 +338,7 @@ namespace Trivia.Application.Game
         
         private async Task ShowingFinalResultEnter(object data, CancellationToken ct)
         {
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(ClientCallNames.ShowFinalResult,
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowFinalResult,
                 new ShowFinalResultEvent
                 {
                     Points = GameStateData.Points

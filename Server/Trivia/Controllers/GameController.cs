@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Trivia.HostedServices;
+using Trivia.Application;
 
 namespace Trivia.Controllers
 {

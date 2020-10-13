@@ -2,13 +2,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Trivia.Application.Game;
 
-namespace Trivia.HostedServices
+namespace Trivia.Application
 {
     public class GameManager : IDisposable
     {
@@ -49,7 +46,7 @@ namespace Trivia.HostedServices
             }
         }
 
-        public void PassEventToGame(string gameId, Game.GameStateTransition transition, object data = null)
+        public void PassEventToGame(string gameId, Game.Game.GameStateTransition transition, object data = null)
         {
             var game = _games[gameId];
             game.EnqueueTransition(transition, data);
