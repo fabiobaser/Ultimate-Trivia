@@ -2,19 +2,25 @@
   "name": "ultimate-trivia-client",
   "version": "0.0.1",
   "scripts": {
-    "start": "parcel --no-hmr src/index.html",
-    "server": "dotnet run -p ../Server/UltimateTrivia/UltimateTrivia.csproj"
+    "start": "parcel src/index.html",
+    "server": "dotnet run -p ../UltimateTrivia.csproj"
   },
   "dependencies": {
     "@microsoft/signalr": "^3.1.8",
     "lodash": "^4.17.20",
+    "oidc-client": "^1.10.1",
+    "oidc-react": "^1.1.1",
     "parcel": "^1.12.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-router-dom": "^5.2.0",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^2.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.11.6",
+    "@babel/plugin-transform-runtime": "^7.11.5",
+    "@babel/preset-react": "^7.10.4",
     "sass": "^1.27.0"
   }
 }

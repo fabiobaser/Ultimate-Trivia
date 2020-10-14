@@ -1,22 +1,10 @@
 import React, { Component } from "react";
-import {
-  Input,
-  Image,
-  Container,
-  Header,
-  Modal,
-  Grid,
-  List,
-  Icon,
-  Card,
-  Button,
-} from "semantic-ui-react";
+import { Input, Image, Modal } from "semantic-ui-react";
 import { HubConnectionBuilder } from "@microsoft/signalr";
 import faker from "faker";
-import JoinCreateGame from "./Components/JoinCreateGame";
-import Game from "./Components/Game";
-
+import LobbyCreateView from "./GameViews/LobbyCreateView";
 import "./App.scss";
+import LoginMenu from "../../ClientApp_dumm/src/components/api-authorization/LoginMenu";
 
 export default class App extends Component {
   constructor(props) {
@@ -33,7 +21,7 @@ export default class App extends Component {
       nameModalOpen: false,
       chat: [],
       inGame: false,
-      gameState: "initial"
+      gameState: "initial",
       topics: [],
       question: "",
     };
@@ -272,55 +260,11 @@ export default class App extends Component {
           id={"backdropView"}
           style={{ flex: 1, background: "rgba(229, 233, 236, 1.00)" }}
         >
-          <Grid columns={2} divided id={"gameView"}>
-            <Grid.Column
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "5%",
-              }}
-              id={"createColumn"}
-              onClick={this.createGame}
-            >
-              <div style={{ height: "auto" }}>
-                <h1>Spiel erstellen</h1>
-                <p>Erstelle ein Spiel dem deine Freunde beitreten können</p>
-                <h1 className="clickToAction">Klicken zum Erstellen</h1>
-              </div>
-            </Grid.Column>
-            <Grid.Column
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "5%",
-              }}
-              id={"joinColumn"}
-              onClick={this.joinLobby}
-            >
-              <div style={{ height: "auto" }}>
-                <h1>Spiel Beitreten</h1>
-                <p>
-                  Wenn ein Freund ein Spiel erstellt kannst du hier den Code
-                  eingeben und dem Spiel beitreten. <b>Viel Spaß!</b>
-                </p>
-                <Input
-                  name="lobbyId"
-                  value={lobbyId}
-                  placeholder="Code"
-                  onChange={(e, p) => this.handleInputChange(e, p, 6)}
-                  className={"inputUppercase"}
-                  style={{
-                    textAlign: "center",
-                    width: "190px",
-                    fontSize: "25px",
-                  }}
-                />
-                <h1 className="clickToAction">Klicken zum Beitreten</h1>
-              </div>
-            </Grid.Column>
-          </Grid>
+          {/*<LobbyCreateView
+            lobbyId={this.state.lobbyId}
+            createLobby={this.createLobby}
+            joinLobby={this.joinLobby}
+          />*/}
         </div>
       </div>
     );
