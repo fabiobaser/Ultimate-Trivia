@@ -4,7 +4,8 @@ import { HubConnectionBuilder } from "@microsoft/signalr";
 import faker from "faker";
 import LobbyCreateView from "./GameViews/LobbyCreateView";
 import "./App.scss";
-import LoginMenu from "../../ClientApp_dumm/src/components/api-authorization/LoginMenu";
+
+import GameView from "./Components/GameView";
 
 export default class App extends Component {
   constructor(props) {
@@ -21,7 +22,7 @@ export default class App extends Component {
       nameModalOpen: false,
       chat: [],
       inGame: false,
-      gameState: "initial",
+      gameState: "lobby", //"initial"
       topics: [],
       question: "",
     };
@@ -29,6 +30,9 @@ export default class App extends Component {
 
   componentDidMount() {
     this.connectToHub();
+
+    this.pushtToChat("Gott", "Du warts ungehorsam");
+    this.pushtToChat("Server", "x250g Butter wurde wegen Inaktivität gekickt");
   }
 
   createGame = () => {
@@ -74,6 +78,7 @@ export default class App extends Component {
         connectedToLobby: true,
         lobbyId: joinLobbyEvent.lobbyId,
         inGame: false,
+        gameState: "lobby",
       });
     });
 
@@ -260,11 +265,15 @@ export default class App extends Component {
           id={"backdropView"}
           style={{ flex: 1, background: "rgba(229, 233, 236, 1.00)" }}
         >
-          {/*<LobbyCreateView
-            lobbyId={this.state.lobbyId}
-            createLobby={this.createLobby}
-            joinLobby={this.joinLobby}
-          />*/}
+          {this.state.gameState === "initial" && (
+            <LobbyCreateView
+              lobbyId={this.state.lobbyId}
+              createLobby={this.createLobby}
+              joinLobby={this.joinLobby}
+            />
+          )}
+
+          {this.state.gameState === "lobby" && <GameView chat={chat} />}
         </div>
       </div>
     );
