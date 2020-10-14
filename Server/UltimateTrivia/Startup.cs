@@ -1,14 +1,11 @@
-using System.Collections.Generic;
 using System.Text.Json;
 using BackgroundScheduler;
-using IdentityServer4.EntityFramework.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,10 +64,6 @@ namespace UltimateTrivia
                 }).AddJsonSerializer();
 
             services.AddRazorPages();
-            services.AddSpaStaticFiles(configuration =>
-            {
-                configuration.RootPath = "ClientApp/dist";
-            });
             
             services.AddCors(options =>
                 options
@@ -147,7 +140,6 @@ namespace UltimateTrivia
             app.UseOpenApi();
 
             app.UseStaticFiles();
-            app.UseSpaStaticFiles();
 
             app.UseWhen(context => context.Request.Path.StartsWithSegments(new PathString("/api")), branch => 
             {
@@ -190,16 +182,6 @@ namespace UltimateTrivia
                     pattern: "{controller}/{action=Index}/{id?}");
                 endpoints.MapHub<TriviaGameHub>("/triviaGameServer");
                 endpoints.MapRazorPages();
-            });
-            
-            app.UseSpa(spa =>
-            {
-                spa.Options.SourcePath = "ClientApp";
-
-                if (env.IsDevelopment())
-                {
-                    spa.UseReactDevelopmentServer(npmScript: "start");
-                }
             });
         }
     }
