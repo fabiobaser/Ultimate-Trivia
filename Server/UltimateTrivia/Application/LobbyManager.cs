@@ -122,7 +122,7 @@ namespace UltimateTrivia.Application
             });
         }
 
-        public async Task CreateGameAsync(string connectionId, CreateGameEvent createGameEvent)
+        public async Task StartGameAsync(string connectionId, StartGameEvent startGameEvent)
         {
             var player = _playerManager.GetPlayerByConnectionId(connectionId);
 
@@ -136,8 +136,8 @@ namespace UltimateTrivia.Application
             var gameId = _gameManager.CreateGame(configuration =>
             {
                 configuration.LobbyId = player.LobbyId;
-                configuration.Rounds = createGameEvent.Rounds;
-                configuration.RoundDuration = createGameEvent.RoundDuration;
+                configuration.Rounds = startGameEvent.Rounds;
+                configuration.RoundDuration = startGameEvent.RoundDuration;
             });
             
             lobby.ConnectToGame(gameId);

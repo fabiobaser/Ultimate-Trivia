@@ -103,11 +103,11 @@ namespace UltimateTrivia.Hubs
             }
         }
 
-        public async Task CreateGame(CreateGameEvent createGameEvent)
+        public async Task StartGame(StartGameEvent startGameEvent)
         {
             try
             {
-                await _lobbyManager.CreateGameAsync(Context.ConnectionId, createGameEvent);
+                await _lobbyManager.StartGameAsync(Context.ConnectionId, startGameEvent);
             }
             catch (Exception e)
             {
