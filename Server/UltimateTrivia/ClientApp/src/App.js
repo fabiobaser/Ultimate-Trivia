@@ -1,19 +1,328 @@
-import React, { Component } from 'react';
-import { Route } from 'react-router';
-import { Layout } from './components/Layout';
-import { Home } from './components/Home';
-import ApiAuthorizationRoutes from './components/api-authorization/ApiAuthorizationRoutes';
-import { ApplicationPaths } from './components/api-authorization/ApiAuthorizationConstants';
+import React, { Component } from "react";
+import {
+  Input,
+  Image,
+  Container,
+  Header,
+  Modal,
+  Grid,
+  List,
+  Icon,
+  Card,
+  Button,
+} from "semantic-ui-react";
+import { HubConnectionBuilder } from "@microsoft/signalr";
+import faker from "faker";
+import JoinCreateGame from "./Components/JoinCreateGame";
+import Game from "./Components/Game";
+
+import "./App.scss";
 
 export default class App extends Component {
-  static displayName = App.name;
+  constructor(props) {
+    super(props);
 
-  render () {
+    this.state = {
+      name: faker.name.firstName(),
+      lobbyId: "",
+      userArray: [],
+      connectedToLobby: false,
+      showSelectableQuestions: false,
+      selectableQuestions: [],
+      possibleAnswers: [],
+      nameModalOpen: false,
+      chat: [],
+      inGame: false,
+      gameState: "initial"
+      topics: [],
+      question: "",
+    };
+  }
+
+  componentDidMount() {
+    this.connectToHub();
+  }
+
+  createGame = () => {
+    this.connection.invoke("CreateGame", { rounds: 3, roundDuration: 30 });
+  };
+
+  createLobby = () => {
+    this.connection.invoke("CreateLobby", this.state.name);
+  };
+
+  joinLobby = () => {
+    const { name, lobbyId } = this.state;
+    console.log("%cConnecting to code: ", "color: orange", lobbyId);
+    this.connection.invoke("JoinLobby", name, lobbyId);
+  };
+
+  leaveLobby = () => {
+    this.pushtToChat("", "You left the lobby");
+    this.connection.invoke("LeaveLobby");
+  };
+
+  pushtToChat = (sender, message) => {
+    const newEntry = { sender, message };
+    const chat = this.state.chat;
+    chat.push(newEntry);
+
+    this.setState({ chat: chat });
+  };
+
+  connectToHub = () => {
+    this.connection = new HubConnectionBuilder()
+      .withUrl("https://localhost:5001/triviaGameServer")
+      .build();
+
+    this.connection.on("broadcastMessage", (username, message) => {
+      console.log(username, message);
+    });
+
+    this.connection.on("joinLobby", (joinLobbyEvent) => {
+      this.pushtToChat("", "Du bist dem Spiel beigetreten");
+      this.setState({
+        userArray: joinLobbyEvent.usernames,
+        connectedToLobby: true,
+        lobbyId: joinLobbyEvent.lobbyId,
+        inGame: false,
+      });
+    });
+
+    this.connection.on("userJoinedLobby", (userJoinedEvent) => {
+      console.log(`${userJoinedEvent.newUser} joined the lobby`);
+      console.log("In the lobby are: ", userJoinedEvent.usernames);
+      this.setState({ userArray: userJoinedEvent.usernames });
+    });
+
+    this.connection.on("leaveLobby", () => {
+      console.log(`You have left the lobby`);
+      this.setState({ connectedToLobby: false, userArray: [] });
+    });
+
+    this.connection.on("userLeftLobby", (userLeftEvent) => {
+      console.log(`${userLeftEvent.leavingUser} has left the lobby`);
+      console.log("In the lobby are: ", userLeftEvent.usernames);
+
+      this.setState({ userArray: userLeftEvent.usernames });
+    });
+
+    this.connection.on("gameStarted", () => {
+      this.setState({ inGame: true });
+    });
+
+    this.connection.on("showCategories", (showCategoriesEvent) => {
+      console.log(
+        `user ${showCategoriesEvent.username} is choosing a category`
+      );
+
+      this.pushtToChat(
+        "",
+        `${showCategoriesEvent.username} wählt ein Thema aus`
+      );
+
+      if (showCategoriesEvent.username === this.state.name) {
+        this.setState({ topics: showCategoriesEvent.categories });
+      }
+    });
+
+    this.connection.on("showQuestion", (showQuestionEvent) => {
+      this.setState({
+        possibleAnswers: showQuestionEvent.answers,
+        question: showQuestionEvent.question,
+      });
+    });
+
+    // TODO: handle correctly
+    this.connection.on("userAnswered", (userAnsweredEvent) => {
+      console.log(`${userAnsweredEvent.username} has answered`);
+    });
+
+    // TODO: handle correctly
+    this.connection.on(
+      "highlightCorrectAnswer",
+      (highlightCorrectAnswerEvent) => {
+        console.log(
+          `correct answer was ${highlightCorrectAnswerEvent.correctAnswer}`
+        );
+      }
+    );
+
+    this.connection.on("updatePoints", (updatePointsEvent) => {
+      this.setState({ points: updatePointsEvent.points });
+    });
+
+    this.connection.on("showFinalResult", (showFinalResultEvent) => {
+      console.log("Final result: ", showFinalResultEvent.points);
+      this.pushtToChat("", "Spiel zuende");
+    });
+
+    // TODO: handle correctly
+    this.connection.on("error", (errorEvent) => {
+      if (errorEvent.errorCode === "DUPLICATE_USERNAME") {
+        console.error("username already taken");
+        console.error(errorEvent.errorMessage);
+      } else {
+        console.error(errorEvent.errorCode + " " + errorEvent.errorMessage);
+      }
+    });
+
+    this.connection
+      .start()
+      .then(
+        (resolve) => {
+          console.log(resolve);
+        },
+        (reject) => {
+          console.log(reject);
+        }
+      )
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  handleInputChange = (e, props, maxLength = 100) => {
+    const { name, value } = props;
+    if (this.state.connectedToLobby) return;
+    if (value.length > maxLength) return;
+    const newState = this.state;
+    newState[name] = value;
+    this.setState(newState);
+  };
+
+  handleAnswerSelect = (answer) => {
+    this.connection.invoke("AnswerSelected", answer);
+    this.setState({ possibleAnswers: [] });
+  };
+
+  handleTopicSelect = (topic) => {
+    this.connection.invoke("CategorySelected", topic);
+    this.setState({ topics: [] });
+  };
+
+  closeModal = () => {
+    this.setState({ nameModalOpen: false });
+  };
+
+  render() {
+    const {
+      connectedToLobby,
+      lobbyId,
+      name,
+      chat,
+      topics,
+      question,
+      inGame,
+    } = this.state;
+
     return (
-      <Layout>
-        <Route exact path='/' component={Home} />
-        <Route path={ApplicationPaths.ApiAuthorizationPrefix} component={ApiAuthorizationRoutes} />
-      </Layout>
+      <div id={"appContainer"} style={{ display: "flex" }}>
+        <div
+          id={"navBar"}
+          style={{
+            background: "white",
+            height: "100vh",
+            width: "70px",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <h1 id={"navBarLogo"}>UT</h1>
+          <div style={{ flex: 1, alignItems: "center" }}></div>
+          <div style={{ textAlign: "center", paddingBottom: "1rem" }}>
+            <Modal
+              closeIcon
+              size={"tiny"}
+              onOpen={() => this.setState({ nameModalOpen: true })}
+              onClose={() => this.setState({ nameModalOpen: false })}
+              open={this.state.nameModalOpen}
+              trigger={
+                <Image
+                  style={{ width: "3rem", height: "3rem" }}
+                  src={`https://avatar.tobi.sh/${name}.svg?text=${name
+                    .slice(0, 2)
+                    .toUpperCase()}`}
+                  avatar
+                />
+              }
+            >
+              <Modal.Header>Spieler Einstellungen</Modal.Header>
+              <Modal.Content image>
+                <Image
+                  style={{ width: "10rem", height: "10rem" }}
+                  src={`https://avatar.tobi.sh/${name}.svg?text=${name
+                    .slice(0, 2)
+                    .toUpperCase()}`}
+                  avatar
+                />
+                <Modal.Description>
+                  <Input
+                    name={"name"}
+                    label={{ children: "Benutzername", basic: true }}
+                    value={name}
+                    onChange={this.handleInputChange}
+                  />
+                </Modal.Description>
+              </Modal.Content>
+            </Modal>
+          </div>
+        </div>
+        <div
+          id={"backdropView"}
+          style={{ flex: 1, background: "rgba(229, 233, 236, 1.00)" }}
+        >
+          <Grid columns={2} divided id={"gameView"}>
+            <Grid.Column
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "5%",
+              }}
+              id={"createColumn"}
+              onClick={this.createGame}
+            >
+              <div style={{ height: "auto" }}>
+                <h1>Spiel erstellen</h1>
+                <p>Erstelle ein Spiel dem deine Freunde beitreten können</p>
+                <h1 className="clickToAction">Klicken zum Erstellen</h1>
+              </div>
+            </Grid.Column>
+            <Grid.Column
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "5%",
+              }}
+              id={"joinColumn"}
+              onClick={this.joinLobby}
+            >
+              <div style={{ height: "auto" }}>
+                <h1>Spiel Beitreten</h1>
+                <p>
+                  Wenn ein Freund ein Spiel erstellt kannst du hier den Code
+                  eingeben und dem Spiel beitreten. <b>Viel Spaß!</b>
+                </p>
+                <Input
+                  name="lobbyId"
+                  value={lobbyId}
+                  placeholder="Code"
+                  onChange={(e, p) => this.handleInputChange(e, p, 6)}
+                  className={"inputUppercase"}
+                  style={{
+                    textAlign: "center",
+                    width: "190px",
+                    fontSize: "25px",
+                  }}
+                />
+                <h1 className="clickToAction">Klicken zum Beitreten</h1>
+              </div>
+            </Grid.Column>
+          </Grid>
+        </div>
+      </div>
     );
   }
 }

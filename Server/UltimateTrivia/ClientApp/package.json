@@ -2,38 +2,19 @@
   "name": "ultimate-trivia-client",
   "version": "0.0.1",
   "scripts": {
-    "start": "rimraf ./build && react-scripts start",
-    "server": "dotnet run -p ../Server/Trivia/Trivia.csproj"
+    "start": "parcel --no-hmr src/index.html",
+    "server": "dotnet run -p ../Server/UltimateTrivia/UltimateTrivia.csproj"
   },
   "dependencies": {
     "@microsoft/signalr": "^3.1.8",
     "lodash": "^4.17.20",
-    "faker": "^5.1.0",
+    "parcel": "^1.12.4",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
     "semantic-ui-css": "^2.4.1",
-    "semantic-ui-react": "^2.0.0",
-    "oidc-client": "^1.9.0",
-    "react": "^16.0.0",
-    "react-dom": "^16.0.0",
-    "react-router-dom": "^5.1.2",
-    "react-scripts": "^3.4.1",
-    "rimraf": "^2.6.2"
+    "semantic-ui-react": "^2.0.0"
   },
   "devDependencies": {
-    "ajv": "^6.9.1",
-    "cross-env": "^5.2.0",
-    "typescript": "^3.7.5",
-    "nan": "^2.14.1"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "sass": "^1.27.0"
   }
 }

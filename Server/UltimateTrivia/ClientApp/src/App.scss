@@ -1,0 +1,132 @@
+
+#backdropView {
+  flex: 1;
+  background: rgba(229, 233, 236, 1.00);
+  padding: 2%;
+}
+
+#navBarLogo {
+  text-align: center;
+  margin-top: 1rem;
+  font-weight: 900;
+  width: 95%;
+}
+
+#gameView {
+  background: white;
+  height: 100%;
+  border-radius: 20px;
+  box-shadow: 0 0 11px 5px #0000000d;
+  margin: 0;
+}
+
+#questionContainer {
+  padding: 3%
+}
+
+#questionNumber {
+  font-size: 140%;
+  font-weight: 400;
+  color: #7c7c7c;
+  margin: 1rem;
+}
+
+#question {
+  font-weight: 700;
+  font-size: 150%;
+  color: #363636;
+  margin: 1rem;
+}
+
+.answerBubble {
+  font-size: 94% !important;
+  margin: 0.5rem !important;
+  margin-right: 2rem !important;
+  margin-left: 2rem !important;
+  color: white !important;
+  background-color: #717171 !important;
+}
+.answer {
+  color: black !important;
+}
+
+#answerSubmitButton {
+  height: 72px;
+  line-height: 47px;
+  text-align: center;
+  font-weight: 700;
+  background: #d6d6d6;
+  color: white !important;
+  text-transform: uppercase;
+
+  &:hover {
+    background: #bababa;
+  }
+}
+
+.clickToAction {
+  text-align: center;
+  color: white;
+}
+
+#joinColumn {
+  position: relative;
+  background: white;
+  cursor: pointer;
+  border-radius: 0 20px 20px 0;
+  z-index: 1;
+
+  &::before {
+    position: absolute;
+    content: "";
+    border-radius: 0 20px 20px 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-image: linear-gradient(to bottom, #ff9068, #ff4b1f);
+    z-index: -1;
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+/*#createColumn:hover h1 {
+  color: white !important;
+}*/
+
+
+#createColumn {
+  position: relative;
+  background: white;
+  cursor: pointer;
+  z-index: 1;
+  border-radius: 20px 0 0 20px;
+
+  &::before {
+    position: absolute;
+    border-radius: 20px 0 0 20px;
+    content: "";
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-image: linear-gradient(to bottom, #b24592, #f15f79);
+    z-index: -1;
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;
+  }
+
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+.inputUppercase input{
+  text-transform: uppercase;
+  text-align: center !important;
+}

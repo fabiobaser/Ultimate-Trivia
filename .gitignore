@@ -110,3 +110,4 @@ dist
 .idea/
 bin/
 obj/
+/Server/UltimateTrivia/.DS_Store
