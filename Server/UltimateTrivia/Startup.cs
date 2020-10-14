@@ -170,6 +170,7 @@ namespace UltimateTrivia
             {
                 app.UseDeveloperExceptionPage();
                 app.UseDatabaseErrorPage();
+                app.UseHsts();
             }
             else
             {
