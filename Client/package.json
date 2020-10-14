@@ -3,10 +3,11 @@
   "version": "0.0.1",
   "scripts": {
     "start": "parcel src/index.html",
-    "server": "dotnet run -p ../UltimateTrivia.csproj"
+    "server": "dotnet run -p ../Server/UltimateTrivia/UltimateTrivia.csproj"
   },
   "dependencies": {
     "@microsoft/signalr": "^3.1.8",
+    "faker": "^5.1.0",
     "lodash": "^4.17.20",
     "oidc-client": "^1.10.1",
     "oidc-react": "^1.1.1",

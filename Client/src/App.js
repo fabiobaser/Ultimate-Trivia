@@ -30,11 +30,7 @@ export default class App extends Component {
 
   componentDidMount() {
     this.connectToHub();
-
     window.rapp = this;
-
-    this.pushtToChat("Gott", "Du warts ungehorsam");
-    this.pushtToChat("Server", "x250g Butter wurde wegen Inaktivität gekickt");
   }
 
   sendMessage = (message) => {
@@ -42,7 +38,7 @@ export default class App extends Component {
   };
 
   createGame = () => {
-    this.connection.invoke("CreateGame", { rounds: 3, roundDuration: 30 });
+    this.connection.invoke("StartGame", { rounds: 3, roundDuration: 30 });
   };
 
   createLobby = () => {
@@ -58,6 +54,7 @@ export default class App extends Component {
   leaveLobby = () => {
     this.pushtToChat("", "You left the lobby");
     this.connection.invoke("LeaveLobby");
+    this.setState({ chat: [], gameState: "initial" });
   };
 
   pushtToChat = (sender, message) => {
@@ -66,6 +63,18 @@ export default class App extends Component {
     chat.push(newEntry);
 
     this.setState({ chat: chat });
+  };
+
+  copyLobbyId = (lobbyId = this.state.lobbyId) => {
+    const copyToClipboard = (str) => {
+      const el = document.createElement("textarea");
+      el.value = str;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    };
+    copyToClipboard(lobbyId);
   };
 
   connectToHub = () => {
@@ -81,15 +90,7 @@ export default class App extends Component {
     this.connection.on("joinLobby", (joinLobbyEvent) => {
       this.pushtToChat("", "Du bist dem Spiel beigetreten");
 
-      const copyToClipboard = (str) => {
-        const el = document.createElement("textarea");
-        el.value = str;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand("copy");
-        document.body.removeChild(el);
-      };
-      copyToClipboard(joinLobbyEvent.lobbyId);
+      //this.copyLobbyId(joinLobbyEvent.lobbyId);
 
       this.setState({
         userArray: joinLobbyEvent.usernames,
@@ -101,8 +102,11 @@ export default class App extends Component {
     });
 
     this.connection.on("userJoinedLobby", (userJoinedEvent) => {
-      console.log(`${userJoinedEvent.newUser} joined the lobby`);
-      console.log("In the lobby are: ", userJoinedEvent.usernames);
+      this.pushtToChat(
+        "",
+        `${userJoinedEvent.newUser} ist dem Spiel beigetreten`
+      );
+
       this.setState({ userArray: userJoinedEvent.usernames });
     });
 
@@ -217,15 +221,7 @@ export default class App extends Component {
   };
 
   render() {
-    const {
-      connectedToLobby,
-      lobbyId,
-      name,
-      chat,
-      topics,
-      question,
-      inGame,
-    } = this.state;
+    const { lobbyId, name, chat, userArray } = this.state;
 
     return (
       <div id={"appContainer"} style={{ display: "flex" }}>
@@ -293,7 +289,15 @@ export default class App extends Component {
           )}
 
           {this.state.gameState === "lobby" && (
-            <GameView chat={chat} sendMessage={this.sendMessage} />
+            <GameView
+              chat={chat}
+              sendMessage={this.sendMessage}
+              userArray={userArray}
+              lobbyId={lobbyId}
+              leaveLobby={this.leaveLobby}
+              copyLobbyId={this.copyLobbyId}
+              createGame={this.createGame}
+            />
           )}
         </div>
       </div>
