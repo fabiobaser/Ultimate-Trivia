@@ -73,7 +73,7 @@ export default class AppAlt extends Component {
               color={"black"}
               basic
               content={lobbyId}
-              onClick={copyLobbyId}
+              onClick={() => copyLobbyId()}
             />
             <Button color={"green"} content="Starten" onClick={createGame} />
           </Button.Group>

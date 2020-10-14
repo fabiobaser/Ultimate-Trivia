@@ -74,6 +74,7 @@ export default class App extends Component {
       document.execCommand("copy");
       document.body.removeChild(el);
     };
+
     copyToClipboard(lobbyId);
   };
 
