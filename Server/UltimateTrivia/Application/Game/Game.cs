@@ -205,7 +205,7 @@ namespace UltimateTrivia.Application.Game
         
         private async Task CollectingCategoryEnter(object data, CancellationToken ct)
         {
-            if (data is CategorySelectedEvent categorySelectedEvent)
+            if (data is CategoryCollectedEvent categorySelectedEvent)
             {
                 if (categorySelectedEvent.Username != GameStateData.CurrentPlayer)    // if some other user than current user choose a category go back to waiting for correct event
                 {
@@ -216,6 +216,14 @@ namespace UltimateTrivia.Application.Game
                 {
                     Logger.LogDebug("{username} selected category {category}", categorySelectedEvent.Username, categorySelectedEvent.Category);
                     GameStateData.Category = categorySelectedEvent.Category;
+                    
+                    await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategoryChoosen,
+                        new CategoryCollectedEvent
+                        {
+                            Category = categorySelectedEvent.Category,
+                            Username = categorySelectedEvent.Username
+                        }, cancellationToken: ct);
+                    
                     await MoveNext(GameStateTransition.ShowQuestion, ct);
                 }
             }

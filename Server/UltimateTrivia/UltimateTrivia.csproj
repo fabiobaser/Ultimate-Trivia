@@ -29,6 +29,7 @@
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       </Content>
       <Content Include="ClientApp\public\manifest.json" />
+      <Content Remove="ClientApp_dumm\package.json" />
     </ItemGroup>
 
     <ItemGroup>
@@ -67,9 +68,11 @@
       <None Update="Certificate\marceljenner.pfx">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
+      <None Remove="ClientApp_dumm\public\favicon.ico" />
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="ClientApp_dumm\public" />
         <Folder Include="Database\Identity\Entities" />
     </ItemGroup>    
     

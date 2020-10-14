@@ -164,7 +164,7 @@ namespace UltimateTrivia.Application
             switch (transition)
             {
                 case Game.Game.GameStateTransition.CollectCategory:
-                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategorySelectedEvent
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategoryCollectedEvent
                     {
                         Category = data,
                         Username = player.Name

@@ -1,4 +1,4 @@
-﻿namespace UltimateTrivia.Application.Game
+﻿namespace UltimateTrivia.Hubs.Events
 {
     public class CategorySelectedEvent
     {
