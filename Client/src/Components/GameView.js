@@ -8,6 +8,7 @@ import {
   List,
   Button,
 } from "semantic-ui-react";
+import _ from "lodash";
 
 import "../App.scss";
 
@@ -37,10 +38,14 @@ export default class GameView extends Component {
 
     if (selectedItem === "") return;
 
-    if (gameState === "topicSelect") {
-      handleTopicSelect(selectedItem);
-    } else if (gameState === "question") {
-      handleAnswerSelect(selectedItem);
+    switch (gameState) {
+      case "topicSelect":
+        handleTopicSelect(selectedItem);
+        break;
+
+      case "question":
+        handleAnswerSelect(selectedItem);
+        break;
     }
 
     this.setState({ selectedItemIndex: -1, selectedItem: "" });
@@ -60,17 +65,37 @@ export default class GameView extends Component {
       points,
       question,
       possibleAnswers,
+      results,
     } = this.props;
 
     let questionText = "";
     let selectionArray = [];
-    if (gameState === "topicSelect") {
-      selectionArray = topics;
-      questionText = "Bitte wähle eine Kategorie für die nächste Runde aus";
-    } else if (gameState === "question") {
-      questionText = question;
-      selectionArray = possibleAnswers;
+
+    switch (gameState) {
+      case "topicSelect":
+        selectionArray = topics.map((a) => ({ content: a }));
+        questionText = "Bitte wähle eine Kategorie für die nächste Runde aus";
+        break;
+
+      case "questionsResult":
+        questionText = question;
+        selectionArray = results;
+        break;
+
+      case "question":
+        questionText = question;
+        selectionArray = possibleAnswers.map((a) => ({ content: a }));
+        break;
     }
+
+    let userPointsArray = userArray.map((user) => ({
+      username: user,
+      points: points[user] || 0,
+    }));
+
+    userPointsArray = _.sortBy(userPointsArray, (u) => u.points).reverse();
+
+    console.log("SelectionArray: ", selectionArray);
 
     return (
       <Grid columns={3} divided id={"gameView"}>
@@ -80,19 +105,19 @@ export default class GameView extends Component {
         >
           <h1>Spieler</h1>
           <List ordered style={{ flex: 1 }}>
-            {userArray.map((username) => {
+            {userPointsArray.map((userObj) => {
               return (
-                <List.Item key={username}>
+                <List.Item key={userObj.username}>
                   <Image
                     style={{ width: "2rem", height: "2rem" }}
-                    src={`https://avatar.tobi.sh/${username}.svg?text=${username
-                      .slice(0, 2)
-                      .toUpperCase()}`}
+                    src={`https://avatar.tobi.sh/${
+                      userObj.username
+                    }.svg?text=${userObj.username.slice(0, 2).toUpperCase()}`}
                     avatar
                   />
                   <List.Content>
-                    <List.Header>{username}</List.Header>
-                    {points[username] || 0} Punkte
+                    <List.Header>{userObj.username}</List.Header>
+                    {(userObj.points || 0) * 10} Punkte
                   </List.Content>
                 </List.Item>
               );
@@ -183,8 +208,13 @@ export default class GameView extends Component {
                       key={entryIndex}
                       active={entryIndex === this.state.selectedItemIndex}
                       char={abc[entryIndex]}
-                      answer={entry}
-                      clickHandler={() => this.handleSelect(entryIndex, entry)}
+                      answer={entry.content}
+                      isResult={gameState === "questionsResult"}
+                      correct={entry.correct || false}
+                      selectedBy={entry.selectedBy || []}
+                      clickHandler={() =>
+                        this.handleSelect(entryIndex, entry.content)
+                      }
                     />
                   );
                 })}
@@ -203,13 +233,35 @@ export default class GameView extends Component {
   }
 }
 
-const Answer = ({ char, answer, active, clickHandler }) => {
+const Answer = ({
+  char,
+  answer,
+  active,
+  clickHandler,
+  isResult,
+  correct,
+  selectedBy,
+}) => {
+  let bubbleColor = "grey";
+
+  if (isResult) {
+    bubbleColor = correct ? "green" : "red";
+  }
+
+  const selBy = selectedBy.map((user) => (
+    <Label key={user} basic size={"mini"}>
+      {user}
+    </Label>
+  ));
+
+  console.log("sel", selectedBy);
+
   return (
     <List.Item className={"answer"} active={active} onClick={clickHandler}>
-      <Label circular className={"answerBubble"}>
+      <Label circular className={"answerBubble"} color={bubbleColor}>
         {char}
       </Label>
-      {answer}
+      {answer} {selBy}
     </List.Item>
   );
 };

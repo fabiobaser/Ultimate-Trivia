@@ -30,6 +30,7 @@ export default class App extends Component {
       topics: [],
       question: "",
       points: {},
+      results: [],
     };
   }
 
@@ -85,7 +86,7 @@ export default class App extends Component {
 
   connectToHub = () => {
     this.connection = new HubConnectionBuilder()
-      .withUrl("https://localhost:5001/triviaGameServer")
+      .withUrl("https://marceljenner.com:5001/triviaGameServer")
       .build();
 
     this.connection.on("broadcastMessage", (username, message) => {
@@ -132,6 +133,10 @@ export default class App extends Component {
       this.setState({ inGame: true });
     });
 
+    this.connection.on("categoryChoosen", ({ username, category }) => {
+      this.pushtToChat("", `${username} hat "${category}" ausgewählt`);
+    });
+
     this.connection.on("showCategories", (showCategoriesEvent) => {
       console.log(
         `user ${showCategoriesEvent.username} is choosing a category, ${showCategoriesEvent.categories}`
@@ -148,6 +153,8 @@ export default class App extends Component {
           gameState: "topicSelect",
         });
       }
+
+      this.setState({ question: "", possibleAnswers: [] });
     });
 
     this.connection.on("showQuestion", (showQuestionEvent) => {
@@ -168,9 +175,10 @@ export default class App extends Component {
     this.connection.on(
       "highlightCorrectAnswer",
       (highlightCorrectAnswerEvent) => {
-        console.log(
-          `correct answer was ${highlightCorrectAnswerEvent.correctAnswer}`
-        );
+        this.setState({
+          gameState: "questionsResult",
+          results: highlightCorrectAnswerEvent.answers,
+        });
       }
     );
 
@@ -195,16 +203,11 @@ export default class App extends Component {
 
     this.connection
       .start()
-      .then(
-        (resolve) => {
-          console.log(resolve);
-        },
-        (reject) => {
-          console.log(reject);
-        }
-      )
+      .then((result) => {
+        console.log(result);
+      })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
       });
   };
 
@@ -219,7 +222,7 @@ export default class App extends Component {
 
   handleAnswerSelect = (answer) => {
     this.connection.invoke("AnswerSelected", answer);
-    this.setState({ possibleAnswers: [] });
+    //this.setState({ possibleAnswers: [] });
   };
 
   handleTopicSelect = (topic) => {
@@ -264,6 +267,7 @@ export default class App extends Component {
       topics,
       question,
       possibleAnswers,
+      results,
       points,
     } = this.state;
 
@@ -334,7 +338,9 @@ export default class App extends Component {
             />
           )}
 
-          {["lobby", "topicSelect", "question"].includes(gameState) && (
+          {["lobby", "topicSelect", "question", "questionsResult"].includes(
+            gameState
+          ) && (
             <GameView
               chat={chat}
               sendMessage={this.sendMessage}
@@ -346,6 +352,7 @@ export default class App extends Component {
               gameState={gameState}
               topics={topics}
               question={question}
+              results={results}
               possibleAnswers={possibleAnswers}
               handleTopicSelect={this.handleTopicSelect}
               handleAnswerSelect={this.handleAnswerSelect}
