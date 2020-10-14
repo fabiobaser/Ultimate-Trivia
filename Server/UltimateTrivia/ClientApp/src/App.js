@@ -22,7 +22,7 @@ export default class App extends Component {
       nameModalOpen: false,
       chat: [],
       inGame: false,
-      gameState: "lobby", //"initial"
+      gameState: "initial", //"initial", "lobby"
       topics: [],
       question: "",
     };
@@ -31,9 +31,15 @@ export default class App extends Component {
   componentDidMount() {
     this.connectToHub();
 
+    window.rapp = this;
+
     this.pushtToChat("Gott", "Du warts ungehorsam");
     this.pushtToChat("Server", "x250g Butter wurde wegen Inaktivität gekickt");
   }
+
+  sendMessage = (message) => {
+    this.connection.invoke("SendMessage", message);
+  };
 
   createGame = () => {
     this.connection.invoke("CreateGame", { rounds: 3, roundDuration: 30 });
@@ -69,10 +75,22 @@ export default class App extends Component {
 
     this.connection.on("broadcastMessage", (username, message) => {
       console.log(username, message);
+      this.pushtToChat(username, message);
     });
 
     this.connection.on("joinLobby", (joinLobbyEvent) => {
       this.pushtToChat("", "Du bist dem Spiel beigetreten");
+
+      const copyToClipboard = (str) => {
+        const el = document.createElement("textarea");
+        el.value = str;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      };
+      copyToClipboard(joinLobbyEvent.lobbyId);
+
       this.setState({
         userArray: joinLobbyEvent.usernames,
         connectedToLobby: true,
@@ -270,10 +288,13 @@ export default class App extends Component {
               lobbyId={this.state.lobbyId}
               createLobby={this.createLobby}
               joinLobby={this.joinLobby}
+              handleInputChange={this.handleInputChange}
             />
           )}
 
-          {this.state.gameState === "lobby" && <GameView chat={chat} />}
+          {this.state.gameState === "lobby" && (
+            <GameView chat={chat} sendMessage={this.sendMessage} />
+          )}
         </div>
       </div>
     );

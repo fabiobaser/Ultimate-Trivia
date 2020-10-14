@@ -1,26 +1,39 @@
 import React, { Component } from "react";
-import { Grid, Button, Feed, Label, List } from "semantic-ui-react";
+import { Grid, Input, Feed, Label, List } from "semantic-ui-react";
 
 import "../App.scss";
 
 export default class AppAlt extends Component {
-  render() {
-    const { chat } = this.props;
+  state = {
+    message: "wef",
+  };
 
-    console.log("%Chat: ", chat);
+  handleChatSend = () => {
+    const { message } = this.state;
+    const { sendMessage } = this.props;
+    sendMessage(message);
+  };
+
+  render() {
+    const { message } = this.state;
+    const { chat } = this.props;
 
     return (
       <Grid columns={3} divided id={"gameView"}>
         <Grid.Column width={4}>
           <h1>Spieler</h1>
         </Grid.Column>
-        <Grid.Column width={4}>
+        <Grid.Column
+          width={4}
+          style={{ display: "flex", flexDirection: "column" }}
+        >
           <h1>Chat</h1>
-          <Feed>
+          <Feed style={{ marginTop: "3rem", flex: 1 }}>
             {chat.map((entry, index) => {
               const { sender, message } = entry;
               return (
                 <Feed.Event
+                  className={sender === "" ? "systemMessage" : ""}
                   key={sender + index}
                   date={sender}
                   summary={message}
@@ -28,6 +41,17 @@ export default class AppAlt extends Component {
               );
             })}
           </Feed>
+          <Input
+            fluid
+            name={"message"}
+            value={message}
+            onChange={(e, p) => this.setState({ message: p.value })}
+            action={{
+              children: "Senden",
+              basic: true,
+              onClick: this.handleChatSend,
+            }}
+          />
         </Grid.Column>
         <Grid.Column width={8} style={{ padding: "2rem" }}>
           <div

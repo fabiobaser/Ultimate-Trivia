@@ -2,6 +2,12 @@ import React, { Component } from "react";
 import { Input, Grid } from "semantic-ui-react";
 
 export default class LobbyCreateView extends Component {
+  handleLobbyJoin = () => {
+    const { lobbyId, joinLobby } = this.props;
+    if (lobbyId.length === 6) {
+      joinLobby();
+    }
+  };
   render() {
     const { lobbyId, createLobby, joinLobby, handleInputChange } = this.props;
     return (
@@ -30,7 +36,7 @@ export default class LobbyCreateView extends Component {
             padding: "5%",
           }}
           id={"joinColumn"}
-          onClick={joinLobby}
+          onClick={this.handleLobbyJoin}
         >
           <div style={{ height: "auto" }}>
             <h1>Spiel Beitreten</h1>
