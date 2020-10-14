@@ -72,7 +72,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="ClientApp_dumm\public" />
         <Folder Include="Database\Identity\Entities" />
     </ItemGroup>    
     

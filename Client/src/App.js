@@ -7,6 +7,10 @@ import "./App.scss";
 
 import GameView from "./Components/GameView";
 
+import { signinRedirect } from './Components/api-authentication/services/userService'
+import { loadUserFromStorage } from './Components/api-authentication/services/userService'
+import store from './redux/store';
+
 export default class App extends Component {
   constructor(props) {
     super(props);
@@ -227,6 +231,29 @@ export default class App extends Component {
     this.setState({ nameModalOpen: false });
   };
 
+  
+  
+  // AUTHENTICATION TEST PLAYGROUND
+   
+  login = () => {
+    signinRedirect()
+  }
+  
+  callApi = () => {
+    
+    loadUserFromStorage(store).then((user) => {
+      console.log(user);
+
+      fetch("https://marceljenner.com:5001/debug", {
+        headers: {
+          "Authentication": "Bearer " + user.access_token
+        }
+      })
+    })   
+  }
+
+  // ----------------------
+  
   render() {
     const {
       lobbyId,
@@ -242,6 +269,8 @@ export default class App extends Component {
 
     return (
       <div id={"appContainer"} style={{ display: "flex" }}>
+        <button onClick={() => this.login()}>Login</button>
+        <button onClick={() => this.callApi()}>Call api</button>
         <div
           id={"navBar"}
           style={{

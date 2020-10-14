@@ -26,5 +26,12 @@ namespace UltimateTrivia.Controllers
         {
             throw new ApplicationException("sumthing went wung");
         }
+        
+        [Authorize]
+        [HttpGet("debug")]
+        public async Task<IActionResult> Authenticate()
+        {
+            return Ok();
+        }
     }
 }

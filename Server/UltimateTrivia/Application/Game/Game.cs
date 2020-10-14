@@ -49,18 +49,26 @@ namespace UltimateTrivia.Application.Game
 
         public class GameData
         {
-            public class Answer
+            public class PlayerAnswer
             {
                 public string Content { get; set; }
                 public DateTimeOffset AnswerGivenAt { get; set; }
             }
+
+            public class Answer
+            {
+                public string Content { get; set; }
+                public bool IsCorrect { get; set; }
+            }
+            
             public int CurrentRound { get; set; }
             public string CurrentPlayer { get; set; }
             public DateTimeOffset QuestionStartedAt { get; set; }
-            public string CorrectAnswer { get; set; }
-            public List<Player> Users { get; set; }
+            public string CorrectAnswer => Answers.First(a => a.IsCorrect).Content;
+            public List<Answer> Answers { get; set; } = new List<Answer>();
+            public List<Player> Users { get; set; } = new List<Player>();
             public Dictionary<string, int> Points { get; set; } = new Dictionary<string, int>();
-            public Dictionary<string, Answer> PlayerAnswers { get; set; } = new Dictionary<string, Answer>();
+            public Dictionary<string, PlayerAnswer> PlayerAnswers { get; set; } = new Dictionary<string, PlayerAnswer>();
             public string Category { get; set; }
 
         }
@@ -163,7 +171,7 @@ namespace UltimateTrivia.Application.Game
             }
             
             GameStateData.Users = users;
-            GameStateData.PlayerAnswers = new Dictionary<string, GameData.Answer>(); // clear answers from last round
+            GameStateData.PlayerAnswers = new Dictionary<string, GameData.PlayerAnswer>(); // clear answers from last round
             
             
             var orderedUsers = users.OrderBy(u => u.Name).ToList();
@@ -240,9 +248,13 @@ namespace UltimateTrivia.Application.Game
 
             GameStateData.QuestionStartedAt = _dateProvider.Now;
 
-            GameStateData.CorrectAnswer = question.Answers.FirstOrDefault(a => a.IsCorrectAnswer)?.Content;
+            GameStateData.Answers = question.Answers.Select(a => new GameData.Answer
+            {
+                Content = a.Content,
+                IsCorrect = a.IsCorrectAnswer
+            }).ToList();
 
-            if (GameStateData.CorrectAnswer == null)
+            if (!GameStateData.Answers.Any(a => a.IsCorrect))
             {
                 throw new ApplicationException($"no correct answer for question {question.Id}");
             }
@@ -270,7 +282,7 @@ namespace UltimateTrivia.Application.Game
             
             if (data is AnswerCollectedEvent answerCollectedEvent)
             {
-                GameStateData.PlayerAnswers[answerCollectedEvent.Username] = new GameData.Answer
+                GameStateData.PlayerAnswers[answerCollectedEvent.Username] = new GameData.PlayerAnswer
                 {
                     Content = answerCollectedEvent.Answer,
                     AnswerGivenAt = _dateProvider.Now
@@ -305,11 +317,15 @@ namespace UltimateTrivia.Application.Game
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.HighlightCorrectAnswer,
                 new HighlightCorrectAnswerEvent
                 {
-                    CorrectAnswer = GameStateData.CorrectAnswer,
-                    UserAnswers = GameStateData.PlayerAnswers.ToDictionary(kv => kv.Key, kv => kv.Value.Content)
+                    Answers = GameStateData.Answers.Select(a => new HighlightCorrectAnswerEvent.Answer
+                    {
+                        Content = a.Content,
+                        Correct = a.IsCorrect,
+                        SelectedBy = GameStateData.PlayerAnswers.Where(pa => pa.Value.Content == a.Content).Select(pa => pa.Key).ToList()
+                    }).ToList()
                 }, cancellationToken: ct);
 
-            await Task.Delay(3000, ct);
+            await Task.Delay(5000, ct);
             
             await MoveNext(GameStateTransition.CalculatePoints, ct);
         }

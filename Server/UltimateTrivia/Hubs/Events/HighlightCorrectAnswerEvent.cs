@@ -4,7 +4,13 @@ namespace UltimateTrivia.Hubs.Events
 {
     public class HighlightCorrectAnswerEvent
     {
-        public string CorrectAnswer { get; set; }
-        public Dictionary<string, string> UserAnswers { get; set; }
+        public List<Answer> Answers { get; set; }
+
+        public class Answer
+        {
+            public string Content { get; set; }
+            public bool Correct { get; set; }
+            public List<string> SelectedBy { get; set; }
+        }
     }
 }

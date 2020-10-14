@@ -119,6 +119,16 @@ namespace UltimateTrivia
                             .WithScopes("openid", "profile", "email")
                             .WithoutClientSecrets();
                     });
+                    
+                    options.Clients.AddSPA("ultimate-trivia-client", options =>
+                    {
+                        options.WithScopes("openid", "profile", "email", "UltimateTriviaAPI")
+                            .WithoutClientSecrets()
+                            .WithRedirectUri("https://localhost:1234/signin-oidc")
+                            .WithRedirectUri("https://marceljenner.com:1234/signin-oidc")
+                            .WithLogoutRedirectUri("https://localhost:1234/sigout-oidc")
+                            .WithLogoutRedirectUri("https://marceljenner.com:1234/sigout-oidc");
+                    });
                 });
 
             services.AddAuthentication()

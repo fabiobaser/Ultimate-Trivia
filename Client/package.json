@@ -2,7 +2,8 @@
   "name": "ultimate-trivia-client",
   "version": "0.0.1",
   "scripts": {
-    "start": "parcel src/index.html",
+    "start": "parcel src/index.html --https --cert ../Server/UltimateTrivia/Certificate/localhost.crt --key ../Server/UltimateTrivia/Certificate/localhost.key",
+    "marcel": "parcel src/index.html --https --cert ../Server/UltimateTrivia/Certificate/fullchain.pem --key ../Server/UltimateTrivia/Certificate/privkey.pem",
     "server": "dotnet run -p ../Server/UltimateTrivia/UltimateTrivia.csproj"
   },
   "dependencies": {
@@ -10,14 +11,15 @@
     "faker": "^5.1.0",
     "lodash": "^4.17.20",
     "oidc-client": "^1.10.1",
-    "oidc-react": "^1.1.1",
     "parcel": "^1.12.4",
     "prettier": "^2.1.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-router-dom": "^5.2.0",
     "semantic-ui-css": "^2.4.1",
-    "semantic-ui-react": "^2.0.0"
+    "semantic-ui-react": "^2.0.0",
+    "react-router-dom": "^5.2.0",
+    "redux": "^4.0.4",
+    "react-redux": "^7.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
