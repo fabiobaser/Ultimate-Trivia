@@ -25,6 +25,7 @@ export default class App extends Component {
       gameState: "initial", //"initial", "lobby"
       topics: [],
       question: "",
+      points: {},
     };
   }
 
@@ -150,6 +151,7 @@ export default class App extends Component {
       this.setState({
         possibleAnswers: showQuestionEvent.answers,
         question: showQuestionEvent.question,
+        gameState: "question",
       });
     });
 
@@ -226,7 +228,17 @@ export default class App extends Component {
   };
 
   render() {
-    const { lobbyId, name, chat, userArray, gameState, topics } = this.state;
+    const {
+      lobbyId,
+      name,
+      chat,
+      userArray,
+      gameState,
+      topics,
+      question,
+      possibleAnswers,
+      points,
+    } = this.state;
 
     return (
       <div id={"appContainer"} style={{ display: "flex" }}>
@@ -293,7 +305,7 @@ export default class App extends Component {
             />
           )}
 
-          {["lobby", "topicSelect"].includes(gameState) && (
+          {["lobby", "topicSelect", "question"].includes(gameState) && (
             <GameView
               chat={chat}
               sendMessage={this.sendMessage}
@@ -304,7 +316,11 @@ export default class App extends Component {
               createGame={this.createGame}
               gameState={gameState}
               topics={topics}
+              question={question}
+              possibleAnswers={possibleAnswers}
               handleTopicSelect={this.handleTopicSelect}
+              handleAnswerSelect={this.handleAnswerSelect}
+              points={points}
             />
           )}
         </div>

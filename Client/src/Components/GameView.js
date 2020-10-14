@@ -32,9 +32,18 @@ export default class GameView extends Component {
   };
 
   handleSubmit = () => {
-    const { handleTopicSelect } = this.props;
-    const { entry } = this.state;
-    handleTopicSelect(entry);
+    const { handleTopicSelect, handleAnswerSelect, gameState } = this.props;
+    const { selectedItem } = this.state;
+
+    if (selectedItem === "") return;
+
+    if (gameState === "topicSelect") {
+      handleTopicSelect(selectedItem);
+    } else if (gameState === "question") {
+      handleAnswerSelect(selectedItem);
+    }
+
+    this.setState({ selectedItemIndex: -1, selectedItem: "" });
   };
 
   render() {
@@ -48,6 +57,9 @@ export default class GameView extends Component {
       createGame,
       gameState,
       topics,
+      points,
+      question,
+      possibleAnswers,
     } = this.props;
 
     let questionText = "";
@@ -55,6 +67,9 @@ export default class GameView extends Component {
     if (gameState === "topicSelect") {
       selectionArray = topics;
       questionText = "Bitte wähle eine Kategorie für die nächste Runde aus";
+    } else if (gameState === "question") {
+      questionText = question;
+      selectionArray = possibleAnswers;
     }
 
     return (
@@ -77,7 +92,7 @@ export default class GameView extends Component {
                   />
                   <List.Content>
                     <List.Header>{username}</List.Header>
-                    100 Punkte
+                    {points[username] || 0} Punkte
                   </List.Content>
                 </List.Item>
               );
@@ -97,12 +112,14 @@ export default class GameView extends Component {
               onClick={() => copyLobbyId()}
             />
           </Button.Group>
-          <Button
-            fluid
-            color={"green"}
-            content="Starten"
-            onClick={createGame}
-          />
+          {gameState === "lobby" && (
+            <Button
+              fluid
+              color={"green"}
+              content="Starten"
+              onClick={createGame}
+            />
+          )}
         </Grid.Column>
         <Grid.Column
           width={4}
@@ -135,9 +152,7 @@ export default class GameView extends Component {
             fluid
             name={"message"}
             value={message}
-            onKeyDown={(e, b) => {
-              console.log(e.keycode, b);
-            }}
+            onKeyDown={(e) => e.which === 13 && this.handleChatSend()}
             onChange={(e, p) => this.setState({ message: p.value })}
             action={{
               children: "Senden",
