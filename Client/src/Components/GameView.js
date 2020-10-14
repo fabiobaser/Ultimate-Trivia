@@ -11,9 +11,13 @@ import {
 
 import "../App.scss";
 
-export default class AppAlt extends Component {
+const abc = "ABCD";
+
+export default class GameView extends Component {
   state = {
     message: "",
+    selectedItemIndex: -1,
+    selectedItem: "",
   };
 
   handleChatSend = () => {
@@ -21,6 +25,16 @@ export default class AppAlt extends Component {
     const { sendMessage } = this.props;
     sendMessage(message);
     this.setState({ message: "" });
+  };
+
+  handleSelect = (entryIndex, entry) => {
+    this.setState({ selectedItemIndex: entryIndex, selectedItem: entry });
+  };
+
+  handleSubmit = () => {
+    const { handleTopicSelect } = this.props;
+    const { entry } = this.state;
+    handleTopicSelect(entry);
   };
 
   render() {
@@ -32,9 +46,16 @@ export default class AppAlt extends Component {
       copyLobbyId,
       leaveLobby,
       createGame,
+      gameState,
+      topics,
     } = this.props;
 
-    console.log(userArray);
+    let questionText = "";
+    let selectionArray = [];
+    if (gameState === "topicSelect") {
+      selectionArray = topics;
+      questionText = "Bitte wähle eine Kategorie für die nächste Runde aus";
+    }
 
     return (
       <Grid columns={3} divided id={"gameView"}>
@@ -75,8 +96,13 @@ export default class AppAlt extends Component {
               content={lobbyId}
               onClick={() => copyLobbyId()}
             />
-            <Button color={"green"} content="Starten" onClick={createGame} />
           </Button.Group>
+          <Button
+            fluid
+            color={"green"}
+            content="Starten"
+            onClick={createGame}
+          />
         </Grid.Column>
         <Grid.Column
           width={4}
@@ -109,6 +135,9 @@ export default class AppAlt extends Component {
             fluid
             name={"message"}
             value={message}
+            onKeyDown={(e, b) => {
+              console.log(e.keycode, b);
+            }}
             onChange={(e, p) => this.setState({ message: p.value })}
             action={{
               children: "Senden",
@@ -129,38 +158,27 @@ export default class AppAlt extends Component {
           >
             <div id={"questionContainer"}>
               <h1 id={"questionNumber"}>Q1</h1>
-              <p id={"question"}>
-                Wo findet seit 1990 das weltweit größte Zappa-Festival, die
-                Zappanale, statt?
-              </p>
+              <p id={"question"}>{questionText}</p>
             </div>
             <div id={"answersContainer"}>
               <List selection divided verticalAlign="middle" size={"huge"}>
-                <List.Item className={"answer"}>
-                  <Label circular className={"answerBubble"}>
-                    A
-                  </Label>
-                  Bad Doberan
+                {selectionArray.map((entry, entryIndex) => {
+                  return (
+                    <Answer
+                      key={entryIndex}
+                      active={entryIndex === this.state.selectedItemIndex}
+                      char={abc[entryIndex]}
+                      answer={entry}
+                      clickHandler={() => this.handleSelect(entryIndex, entry)}
+                    />
+                  );
+                })}
+                <List.Item
+                  id={"answerSubmitButton"}
+                  onClick={this.handleSubmit}
+                >
+                  {gameState === "topicSelect" ? "Auswählen" : "Beantworten"}
                 </List.Item>
-                <List.Item className={"answer"}>
-                  <Label circular className={"answerBubble"}>
-                    B
-                  </Label>
-                  Berlin
-                </List.Item>
-                <List.Item className={"answer"}>
-                  <Label circular className={"answerBubble"}>
-                    C
-                  </Label>
-                  Maryland
-                </List.Item>
-                <List.Item className={"answer"}>
-                  <Label circular className={"answerBubble"}>
-                    D
-                  </Label>
-                  San Francisco
-                </List.Item>
-                <List.Item id={"answerSubmitButton"}>Beantworten</List.Item>
               </List>
             </div>
           </div>
@@ -169,3 +187,14 @@ export default class AppAlt extends Component {
     );
   }
 }
+
+const Answer = ({ char, answer, active, clickHandler }) => {
+  return (
+    <List.Item className={"answer"} active={active} onClick={clickHandler}>
+      <Label circular className={"answerBubble"}>
+        {char}
+      </Label>
+      {answer}
+    </List.Item>
+  );
+};

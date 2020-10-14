@@ -129,7 +129,7 @@ export default class App extends Component {
 
     this.connection.on("showCategories", (showCategoriesEvent) => {
       console.log(
-        `user ${showCategoriesEvent.username} is choosing a category`
+        `user ${showCategoriesEvent.username} is choosing a category, ${showCategoriesEvent.categories}`
       );
 
       this.pushtToChat(
@@ -138,11 +138,15 @@ export default class App extends Component {
       );
 
       if (showCategoriesEvent.username === this.state.name) {
-        this.setState({ topics: showCategoriesEvent.categories });
+        this.setState({
+          topics: showCategoriesEvent.categories,
+          gameState: "topicSelect",
+        });
       }
     });
 
     this.connection.on("showQuestion", (showQuestionEvent) => {
+      console.log("Question", showQuestionEvent);
       this.setState({
         possibleAnswers: showQuestionEvent.answers,
         question: showQuestionEvent.question,
@@ -222,7 +226,7 @@ export default class App extends Component {
   };
 
   render() {
-    const { lobbyId, name, chat, userArray } = this.state;
+    const { lobbyId, name, chat, userArray, gameState, topics } = this.state;
 
     return (
       <div id={"appContainer"} style={{ display: "flex" }}>
@@ -289,7 +293,7 @@ export default class App extends Component {
             />
           )}
 
-          {this.state.gameState === "lobby" && (
+          {["lobby", "topicSelect"].includes(gameState) && (
             <GameView
               chat={chat}
               sendMessage={this.sendMessage}
@@ -298,6 +302,9 @@ export default class App extends Component {
               leaveLobby={this.leaveLobby}
               copyLobbyId={this.copyLobbyId}
               createGame={this.createGame}
+              gameState={gameState}
+              topics={topics}
+              handleTopicSelect={this.handleTopicSelect}
             />
           )}
         </div>
