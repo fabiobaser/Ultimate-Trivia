@@ -1,6 +1,6 @@
-﻿namespace UltimateTrivia.Hubs.Events
+﻿namespace UltimateTrivia.Application.Game
 {
-    public class StartGameEvent
+    public class GameStartedData
     {
         public int Rounds { get; set; }
         public int AnswerDuration { get; set; }

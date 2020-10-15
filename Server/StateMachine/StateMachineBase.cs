@@ -27,7 +27,8 @@ namespace StateMachine
         }
 
         protected readonly ILogger Logger;
-        
+
+        public bool IsRunning => !Equals(CurrentState.Name, StateMachineBaseState.Idle);
         protected State LastState { get; private set; }
         protected State CurrentState { get; private set; }
         private readonly List<State> _states = new List<State>();

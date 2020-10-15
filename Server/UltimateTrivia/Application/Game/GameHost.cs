@@ -6,7 +6,7 @@ namespace UltimateTrivia.Application.Game
     public class GameHost : IDisposable
     {
         private IServiceScope _scope;
-        private Game Game { get; set; }
+        public Game Game { get; private set; }
 
         public GameHost(IServiceProvider serviceProvider)
         {
@@ -19,8 +19,6 @@ namespace UltimateTrivia.Application.Game
             Game = ActivatorUtilities.CreateInstance<Game>(_scope.ServiceProvider, options);
             return Game.Id;
         }
-
-        public void EnqueueTransition(Enum command, object data = null) => Game.EnqueueTransition(command, data);
 
         public void Dispose()
         {

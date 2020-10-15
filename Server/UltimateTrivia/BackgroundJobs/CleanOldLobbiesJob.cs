@@ -20,7 +20,7 @@ namespace UltimateTrivia.BackgroundJobs
         {
             var usedLobbies = _playerManager.GetAllLobbyIds();
 
-            var existingLobbies = _lobbyManager.GetAllLobbyNames();
+            var existingLobbies = _lobbyManager.GetAllLobbies().Select(l => l.Id);
 
             var unusedLobbies = existingLobbies.Except(usedLobbies).ToList();
 

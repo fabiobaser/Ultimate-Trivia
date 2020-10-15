@@ -44,7 +44,7 @@ export default class App extends Component {
   };
 
   createGame = () => {
-    this.connection.invoke("StartGame", { rounds: 3, roundDuration: 30 });
+    this.connection.invoke("StartGame", { rounds: 3, answerDuration: 30 });
   };
 
   createLobby = () => {

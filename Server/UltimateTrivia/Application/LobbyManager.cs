@@ -35,9 +35,18 @@ namespace UltimateTrivia.Application
             _logger = logger;
         }
 
-        public IEnumerable<string> GetAllLobbyNames()
+        public List<Lobby> GetAllLobbies()
         {
-            return Lobbies.Keys;
+            return Lobbies.Select(l => l.Value).ToList();
+        }
+        
+        public Lobby GetLobbyById(string lobbyId)
+        {
+            if (Lobbies.TryGetValue(lobbyId, out var lobby))
+            {
+                return lobby;
+            }
+            throw new NotFoundException($"lobby {lobbyId} doesnt exist");
         }
 
         public void DeleteLobby(string lobbyId)
@@ -48,7 +57,6 @@ namespace UltimateTrivia.Application
                 throw new ApplicationException($"lobby {lobbyId} couldnt be deleted");
             }
 
-            
             if (lobby.GameId != null)
             {
                 _gameManager.DeleteGame(lobby.GameId);
@@ -133,19 +141,38 @@ namespace UltimateTrivia.Application
                 throw new ApplicationException("User is not inside a lobby");
             }
 
-            var gameId = _gameManager.CreateGame(configuration =>
+            if (lobby.GameId == null)
             {
-                configuration.LobbyId = player.LobbyId;
-                configuration.Rounds = startGameEvent.Rounds;
-                configuration.RoundDuration = startGameEvent.RoundDuration;
-            });
+                var gameId = _gameManager.CreateGame(configuration =>
+                {
+                    configuration.LobbyId = player.LobbyId;
+                });
             
-            lobby.ConnectToGame(gameId);
-            
-            _gameManager.PassEventToGame(gameId, Application.Game.Game.GameStateTransition.StartGame);
+                lobby.ConnectToGame(gameId);
+                _gameManager.PassEventToGame(gameId, Application.Game.Game.EGameStateTransition.StartGame, new GameStartedData
+                {
+                    Rounds = startGameEvent.Rounds,
+                    AnswerDuration = startGameEvent.AnswerDuration
+                });
+            }
+            else
+            {
+                if (!_gameManager.IsGameInProgress(lobby.GameId))
+                {
+                    _gameManager.PassEventToGame(lobby.GameId, Application.Game.Game.EGameStateTransition.StartGame, new GameStartedData
+                    {
+                        Rounds = startGameEvent.Rounds,
+                        AnswerDuration = startGameEvent.AnswerDuration
+                    });
+                }
+                else
+                {
+                    throw new GameInProgressException($"Game {lobby.GameId} is already in progress");
+                }
+            }
         }
 
-        public async Task PassEventToGame(string connectionId, Game.Game.GameStateTransition transition, string data)
+        public async Task PassEventToGame(string connectionId, Game.Game.EGameStateTransition transition, string data)
         {
             var player = _playerManager.GetPlayerByConnectionId(connectionId);
 
@@ -163,15 +190,15 @@ namespace UltimateTrivia.Application
 
             switch (transition)
             {
-                case Game.Game.GameStateTransition.CollectCategory:
-                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategoryCollectedEvent
+                case Game.Game.EGameStateTransition.CollectCategory:
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategoryCollectedData
                     {
                         Category = data,
                         Username = player.Name
                     });
                     break;
-                case Game.Game.GameStateTransition.CollectAnswers:
-                    _gameManager.PassEventToGame(lobby.GameId, transition, new AnswerCollectedEvent()
+                case Game.Game.EGameStateTransition.CollectAnswers:
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new AnswerCollectedData()
                     {
                         Answer = data,
                         Username = player.Name

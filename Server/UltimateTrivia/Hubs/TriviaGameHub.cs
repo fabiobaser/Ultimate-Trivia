@@ -119,7 +119,7 @@ namespace UltimateTrivia.Hubs
         {
             try
             {
-                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.GameStateTransition.CollectCategory, category);
+                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameStateTransition.CollectCategory, category);
             }
             catch (Exception e)
             {
@@ -131,7 +131,7 @@ namespace UltimateTrivia.Hubs
         {
             try
             {
-                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.GameStateTransition.CollectAnswers,answer);
+                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameStateTransition.CollectAnswers,answer);
             }
             catch (Exception e)
             {
@@ -150,6 +150,13 @@ namespace UltimateTrivia.Hubs
                     {
                         ErrorCode = ErrorCodes.DuplicateUserName,
                         ErrorMessage = duplicateUserNameException.Message
+                    });
+                    break;
+                case GameInProgressException gameInProgressException:
+                    await Clients.Caller.SendAsync(RpcFunctionNames.Error, new ErrorEvent
+                    {
+                        ErrorCode = ErrorCodes.GameAlreadyInProgress,
+                        ErrorMessage = gameInProgressException.Message
                     });
                     break;
                 default:

@@ -15,9 +15,9 @@ using Utils;
 
 namespace UltimateTrivia.Application.Game
 {
-    public class Game : StateMachineBase
+    public partial class Game : StateMachineBase
     {
-        public enum GameState
+        public enum EGameState
         {
             Started,
             StartingNewRound,
@@ -32,7 +32,7 @@ namespace UltimateTrivia.Application.Game
             ShowingFinalResult
         }
 
-        public enum GameStateTransition
+        public enum EGameStateTransition
         {
             StartGame,
             StartNewRound,
@@ -47,41 +47,15 @@ namespace UltimateTrivia.Application.Game
             ShowFinalResult
         }
 
-        public class GameData
-        {
-            public class PlayerAnswer
-            {
-                public string Content { get; set; }
-                public DateTimeOffset AnswerGivenAt { get; set; }
-            }
 
-            public class Answer
-            {
-                public string Content { get; set; }
-                public bool IsCorrect { get; set; }
-            }
-            
-            public int CurrentRound { get; set; }
-            public string CurrentPlayer { get; set; }
-            public DateTimeOffset QuestionStartedAt { get; set; }
-            public string CorrectAnswer => Answers.First(a => a.IsCorrect).Content;
-            public List<Answer> Answers { get; set; } = new List<Answer>();
-            public List<Player> Users { get; set; } = new List<Player>();
-            public Dictionary<string, int> Points { get; set; } = new Dictionary<string, int>();
-            public Dictionary<string, PlayerAnswer> PlayerAnswers { get; set; } = new Dictionary<string, PlayerAnswer>();
-            public string Category { get; set; }
-
-        }
-        
-        
         private readonly IHubContext<TriviaGameHub> _hubContext;
         private readonly IDateProvider _dateProvider;
         private readonly PlayerManager _playerManager;
         private readonly QuestionRepository _questionRepository;
         private readonly GameConfiguration _configuration;
         
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        private GameData GameStateData;
+        public string Id { get; } = Guid.NewGuid().ToString();
+        private GameState _gameState;
         
         public Game(ILogger<Game> logger, IHubContext<TriviaGameHub> hubContext, IDateProvider dateProvider, PlayerManager playerManager, QuestionRepository questionRepository, GameConfiguration configuration) : base(logger)
         {
@@ -97,51 +71,51 @@ namespace UltimateTrivia.Application.Game
             base.AddStates();
 
             GetState(StateMachineBaseState.Idle)
-                .On(GameStateTransition.StartGame).Goto(GameState.Started);
+                .On(EGameStateTransition.StartGame).Goto(EGameState.Started);
 
-            AddState(GameState.Started)
-                .On(GameStateTransition.StartNewRound).Goto(GameState.StartingNewRound)
+            AddState(EGameState.Started)
+                .On(EGameStateTransition.StartNewRound).Goto(EGameState.StartingNewRound)
                 .OnEnter(StartedEntered);
 
-            AddState(GameState.StartingNewRound)
-                .On(GameStateTransition.ShowCategories).Goto(GameState.ShowingCategories)
-                .On(GameStateTransition.ShowFinalResult).Goto(GameState.ShowingFinalResult)
+            AddState(EGameState.StartingNewRound)
+                .On(EGameStateTransition.ShowCategories).Goto(EGameState.ShowingCategories)
+                .On(EGameStateTransition.ShowFinalResult).Goto(EGameState.ShowingFinalResult)
                 .On(StateMachineBaseCommand.Done).Goto(StateMachineBaseState.Idle)
                 .OnEnter(StartingNewRoundEnter);
 
-            AddState(GameState.ShowingCategories)
-                .On(GameStateTransition.WaitForCategory).Goto(GameState.WaitingForCategory)
+            AddState(EGameState.ShowingCategories)
+                .On(EGameStateTransition.WaitForCategory).Goto(EGameState.WaitingForCategory)
                 .OnEnter(ShowingCategoriesEnter);
 
-            AddState(GameState.WaitingForCategory)
-                .On(GameStateTransition.CollectCategory).Goto(GameState.CollectingCategory);
+            AddState(EGameState.WaitingForCategory)
+                .On(EGameStateTransition.CollectCategory).Goto(EGameState.CollectingCategory);
 
-            AddState(GameState.CollectingCategory)
-                .On(GameStateTransition.ShowQuestion).Goto(GameState.ShowingQuestion)
-                .On(GameStateTransition.WaitForCategory).Goto(GameState.WaitingForCategory)
+            AddState(EGameState.CollectingCategory)
+                .On(EGameStateTransition.ShowQuestion).Goto(EGameState.ShowingQuestion)
+                .On(EGameStateTransition.WaitForCategory).Goto(EGameState.WaitingForCategory)
                 .OnEnter(CollectingCategoryEnter);
             
-            AddState(GameState.ShowingQuestion)
-                .On(GameStateTransition.WaitForAnswers).Goto(GameState.WaitingForAnswers)
+            AddState(EGameState.ShowingQuestion)
+                .On(EGameStateTransition.WaitForAnswers).Goto(EGameState.WaitingForAnswers)
                 .OnEnter(ShowingQuestionEnter);
 
-            AddState(GameState.WaitingForAnswers)
-                .On(GameStateTransition.CollectAnswers).Goto(GameState.CollectingAnswers);
+            AddState(EGameState.WaitingForAnswers)
+                .On(EGameStateTransition.CollectAnswers).Goto(EGameState.CollectingAnswers);
 
-            AddState(GameState.CollectingAnswers)
-                .On(GameStateTransition.WaitForAnswers).Goto(GameState.WaitingForAnswers)
-                .On(GameStateTransition.HighlightCorrectAnswer).Goto(GameState.HighlightingCorrectAnswer)
+            AddState(EGameState.CollectingAnswers)
+                .On(EGameStateTransition.WaitForAnswers).Goto(EGameState.WaitingForAnswers)
+                .On(EGameStateTransition.HighlightCorrectAnswer).Goto(EGameState.HighlightingCorrectAnswer)
                 .OnEnter(CollectingAnswerEnter);
 
-            AddState(GameState.HighlightingCorrectAnswer)
-                .On(GameStateTransition.CalculatePoints).Goto(GameState.CalculatingPoints)
+            AddState(EGameState.HighlightingCorrectAnswer)
+                .On(EGameStateTransition.CalculatePoints).Goto(EGameState.CalculatingPoints)
                 .OnEnter(HighlightingCorrectAnswerEnter);
             
-            AddState(GameState.CalculatingPoints)
-                .On(GameStateTransition.StartNewRound).Goto(GameState.StartingNewRound)
+            AddState(EGameState.CalculatingPoints)
+                .On(EGameStateTransition.StartNewRound).Goto(EGameState.StartingNewRound)
                 .OnEnter(CalculatingPointsEnter);
 
-            AddState(GameState.ShowingFinalResult)
+            AddState(EGameState.ShowingFinalResult)
                 .On(StateMachineBaseCommand.Done).Goto(StateMachineBaseState.Idle)
                 .OnEnter(ShowingFinalResultEnter);
         }
@@ -150,14 +124,22 @@ namespace UltimateTrivia.Application.Game
 
         private async Task StartedEntered(object data, CancellationToken ct)
         {
-            Logger.LogDebug("Game {gameId} started", Id);
-            GameStateData = new GameData
+            if (!(data is GameStartedData gameStartedData))
             {
-                CurrentRound = 1
+                throw new ApplicationException($"unexpected data received {data.GetType()}");
+            }
+
+            Logger.LogDebug("Game {gameId} started", Id);
+            _gameState = new GameState
+            {
+                CurrentRoundNr = 1,
+                CurrentQuestionNr = 1,
+                MaxRounds = gameStartedData.Rounds,
+                AnswerDuration = gameStartedData.AnswerDuration
             };
             
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.GameStarted, cancellationToken: ct);
-            await MoveNext(GameStateTransition.StartNewRound, ct);
+            await MoveNext(EGameStateTransition.StartNewRound, ct);
         }
         
         private async Task StartingNewRoundEnter(object data, CancellationToken ct)
@@ -170,32 +152,32 @@ namespace UltimateTrivia.Application.Game
                 return;
             }
             
-            GameStateData.Users = users;
-            GameStateData.PlayerAnswers = new Dictionary<string, GameData.PlayerAnswer>(); // clear answers from last round
+            _gameState.Users = users;
+            _gameState.CurrentPlayerAnswers = new Dictionary<string, GameState.PlayerAnswer>(); // clear answers from last round
             
             
             var orderedUsers = users.OrderBy(u => u.Name).ToList();
 
             // get next user in alphabetical order, return null when last user was reached
-            var next = orderedUsers.FirstOrDefault(u => string.CompareOrdinal(u.Name, GameStateData.CurrentPlayer) > 0);
+            var next = orderedUsers.FirstOrDefault(u => string.CompareOrdinal(u.Name, _gameState.CurrentPlayer) > 0);
 
             if (next == null)
             {
-                GameStateData.CurrentRound++;
+                _gameState.CurrentRoundNr++;
                 next = orderedUsers.First();
                 
                 // TODO: send event for newRound?
             }
 
-            if (GameStateData.CurrentRound > _configuration.Rounds)
+            if (_gameState.CurrentRoundNr > _gameState.MaxRounds)
             {
-                await MoveNext(GameStateTransition.ShowFinalResult, ct);
+                await MoveNext(EGameStateTransition.ShowFinalResult, ct);
                 return;
             }
             
-            GameStateData.CurrentPlayer = next.Name;
+            _gameState.CurrentPlayer = next.Name;
 
-            await MoveNext(GameStateTransition.ShowCategories, ct);
+            await MoveNext(EGameStateTransition.ShowCategories, ct);
         }
         
         private async Task ShowingCategoriesEnter(object data, CancellationToken ct)
@@ -204,57 +186,54 @@ namespace UltimateTrivia.Application.Game
             
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowCategories, new ShowCategoriesEvent
             {
-                Username = GameStateData.CurrentPlayer,
+                Username = _gameState.CurrentPlayer,
                 Categories = categories
             }, ct);
 
-            await MoveNext(GameStateTransition.WaitForCategory, ct);
+            await MoveNext(EGameStateTransition.WaitForCategory, ct);
         }
         
         private async Task CollectingCategoryEnter(object data, CancellationToken ct)
         {
-            if (data is CategoryCollectedEvent categorySelectedEvent)
-            {
-                if (categorySelectedEvent.Username != GameStateData.CurrentPlayer)    // if some other user than current user choose a category go back to waiting for correct event
-                {
-                    Logger.LogWarning("{username} tried to select a category, but it is {currentUser}´s turn", categorySelectedEvent.Username, GameStateData.CurrentPlayer);
-                    await MoveNext(GameStateTransition.WaitForCategory, ct);
-                }
-                else
-                {
-                    Logger.LogDebug("{username} selected category {category}", categorySelectedEvent.Username, categorySelectedEvent.Category);
-                    GameStateData.Category = categorySelectedEvent.Category;
-                    
-                    await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategoryChoosen,
-                        new CategoryCollectedEvent
-                        {
-                            Category = categorySelectedEvent.Category,
-                            Username = categorySelectedEvent.Username
-                        }, cancellationToken: ct);
-                    
-                    await MoveNext(GameStateTransition.ShowQuestion, ct);
-                }
-            }
-            else
+            if (!(data is CategoryCollectedData categorySelectedEvent))
             {
                 throw new ApplicationException($"unexpected data received {data.GetType()}");
             }
             
+            if (categorySelectedEvent.Username != _gameState.CurrentPlayer)    // if some other user than current user choose a category go back to waiting for correct event
+            {
+                Logger.LogWarning("{username} tried to select a category, but it is {currentUser}´s turn", categorySelectedEvent.Username, _gameState.CurrentPlayer);
+                await MoveNext(EGameStateTransition.WaitForCategory, ct);
+            }
+            else
+            {
+                Logger.LogDebug("{username} selected category {category}", categorySelectedEvent.Username, categorySelectedEvent.Category);
+                _gameState.CurrentCategory = categorySelectedEvent.Category;
+                    
+                await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategoryChoosen,
+                    new CategoryCollectedData
+                    {
+                        Category = categorySelectedEvent.Category,
+                        Username = categorySelectedEvent.Username
+                    }, cancellationToken: ct);
+                    
+                await MoveNext(EGameStateTransition.ShowQuestion, ct);
+            }
         }
         
         private async Task ShowingQuestionEnter(object data, CancellationToken ct)
         {
-            var question = await _questionRepository.GetRandomQuestionsFromCategory(GameStateData.Category);
+            var question = await _questionRepository.GetRandomQuestionsFromCategory(_gameState.CurrentCategory);
 
-            GameStateData.QuestionStartedAt = _dateProvider.Now;
+            _gameState.CurrentQuestionStartedAt = _dateProvider.Now;
 
-            GameStateData.Answers = question.Answers.Select(a => new GameData.Answer
+            _gameState.CurrentAnswers = question.Answers.Select(a => new GameState.Answer
             {
                 Content = a.Content,
                 IsCorrect = a.IsCorrectAnswer
             }).ToList();
 
-            if (!GameStateData.Answers.Any(a => a.IsCorrect))
+            if (!_gameState.CurrentAnswers.Any(a => a.IsCorrect))
             {
                 throw new ApplicationException($"no correct answer for question {question.Id}");
             }
@@ -266,7 +245,7 @@ namespace UltimateTrivia.Application.Game
                     Answers = question.Answers.Select(a => a.Content).OrderBy(a => Guid.NewGuid()).ToList()
                 }, cancellationToken: ct);
             
-            await MoveNext(GameStateTransition.WaitForAnswers, ct);
+            await MoveNext(EGameStateTransition.WaitForAnswers, ct);
         }
         
         private async Task CollectingAnswerEnter(object data, CancellationToken ct)
@@ -278,37 +257,35 @@ namespace UltimateTrivia.Application.Game
                 await MoveNext(StateMachineBaseCommand.Done, ct);
                 return;
             }
-            GameStateData.Users = players;
+            _gameState.Users = players;
             
-            if (data is AnswerCollectedEvent answerCollectedEvent)
+            if (!(data is AnswerCollectedData answerCollectedEvent))
             {
-                GameStateData.PlayerAnswers[answerCollectedEvent.Username] = new GameData.PlayerAnswer
-                {
-                    Content = answerCollectedEvent.Answer,
-                    AnswerGivenAt = _dateProvider.Now
-                };
+                throw new ApplicationException($"unexpected data received {data.GetType()}");
+            }
+            
+            _gameState.CurrentPlayerAnswers[answerCollectedEvent.Username] = new GameState.PlayerAnswer
+            {
+                Content = answerCollectedEvent.Answer,
+                AnswerGivenAt = _dateProvider.Now
+            };
 
-                Logger.LogDebug("{username} selected answer {answer}", answerCollectedEvent.Username, answerCollectedEvent.Answer);
+            Logger.LogDebug("{username} selected answer {answer}", answerCollectedEvent.Username, answerCollectedEvent.Answer);
                 
-                await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.UserAnswered,
-                    new UserAnsweredEvent
-                    {
-                        Username = answerCollectedEvent.Username,
-                        RemainingUsers = GameStateData.Users.Where(u => !GameStateData.PlayerAnswers.ContainsKey(u.Name)).Select(u => u.Name).ToList()
-                    }, cancellationToken: ct);
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.UserAnswered,
+                new UserAnsweredEvent
+                {
+                    Username = answerCollectedEvent.Username,
+                    RemainingUsers = _gameState.Users.Where(u => !_gameState.CurrentPlayerAnswers.ContainsKey(u.Name)).Select(u => u.Name).ToList()
+                }, cancellationToken: ct);
                 
-                if (GameStateData.Users.Any(u => !GameStateData.PlayerAnswers.ContainsKey(u.Name)))
-                {
-                    await MoveNext(GameStateTransition.WaitForAnswers, ct);
-                }
-                else
-                {
-                    await MoveNext(GameStateTransition.HighlightCorrectAnswer, ct);
-                }
+            if (_gameState.Users.Any(u => !_gameState.CurrentPlayerAnswers.ContainsKey(u.Name)))
+            {
+                await MoveNext(EGameStateTransition.WaitForAnswers, ct);
             }
             else
             {
-                throw new ApplicationException($"unexpected data received {data.GetType()}");
+                await MoveNext(EGameStateTransition.HighlightCorrectAnswer, ct);
             }
         }
         
@@ -317,23 +294,23 @@ namespace UltimateTrivia.Application.Game
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.HighlightCorrectAnswer,
                 new HighlightCorrectAnswerEvent
                 {
-                    Answers = GameStateData.Answers.Select(a => new HighlightCorrectAnswerEvent.Answer
+                    Answers = _gameState.CurrentAnswers.Select(a => new HighlightCorrectAnswerEvent.Answer
                     {
                         Content = a.Content,
                         Correct = a.IsCorrect,
-                        SelectedBy = GameStateData.PlayerAnswers.Where(pa => pa.Value.Content == a.Content).Select(pa => pa.Key).ToList()
+                        SelectedBy = _gameState.CurrentPlayerAnswers.Where(pa => pa.Value.Content == a.Content).Select(pa => pa.Key).ToList()
                     }).ToList()
                 }, cancellationToken: ct);
 
             await Task.Delay(5000, ct);
             
-            await MoveNext(GameStateTransition.CalculatePoints, ct);
+            await MoveNext(EGameStateTransition.CalculatePoints, ct);
         }
         
         private async Task CalculatingPointsEnter(object data, CancellationToken ct)
         {
-            var correctAnswers = GameStateData.PlayerAnswers
-                .Where(a => a.Value.Content == GameStateData.CorrectAnswer)
+            var correctAnswers = _gameState.CurrentPlayerAnswers
+                .Where(a => a.Value.Content == _gameState.CurrentCorrectAnswer)
                 .OrderBy(a => a.Value.AnswerGivenAt)
                 .ToList();
 
@@ -341,23 +318,23 @@ namespace UltimateTrivia.Application.Game
             {
                 var answerPair = correctAnswers[i];
 
-                if (GameStateData.Points.ContainsKey(answerPair.Key))
+                if (_gameState.Points.ContainsKey(answerPair.Key))
                 {
-                    GameStateData.Points[answerPair.Key] += GameStateData.Users.Count - i;
+                    _gameState.Points[answerPair.Key] += _gameState.Users.Count - i;
                 }
                 else
                 {
-                    GameStateData.Points[answerPair.Key] = GameStateData.Users.Count - i;
+                    _gameState.Points[answerPair.Key] = _gameState.Users.Count - i;
                 }
             }
 
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.UpdatePoints,
                 new UpdatePointsEvent
                 {
-                    Points = GameStateData.Points
+                    Points = _gameState.Points
                 }, cancellationToken: ct);
 
-            await MoveNext(GameStateTransition.StartNewRound, ct);
+            await MoveNext(EGameStateTransition.StartNewRound, ct);
         }
         
         private async Task ShowingFinalResultEnter(object data, CancellationToken ct)
@@ -365,7 +342,7 @@ namespace UltimateTrivia.Application.Game
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowFinalResult,
                 new ShowFinalResultEvent
                 {
-                    Points = GameStateData.Points
+                    Points = _gameState.Points
                 }, cancellationToken: ct);
 
             await MoveNext(StateMachineBaseCommand.Done, ct);

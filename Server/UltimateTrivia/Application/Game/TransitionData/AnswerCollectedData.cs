@@ -1,8 +1,8 @@
 ﻿namespace UltimateTrivia.Application.Game
 {
-    public class CategoryCollectedEvent
+    public class AnswerCollectedData
     {
-        public string Category { get; set; }
         public string Username { get; set; }
+        public string Answer { get; set; }
     }
 }

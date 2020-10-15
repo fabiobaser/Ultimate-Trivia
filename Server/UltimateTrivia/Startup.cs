@@ -4,7 +4,9 @@ using BackgroundScheduler;
 using IdentityServer4;
 using IdentityServer4.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -149,15 +151,19 @@ namespace UltimateTrivia
 
             services.AddAuthentication()
                 .AddIdentityServerJwt()
-                .AddGoogle(GoogleDefaults.AuthenticationScheme,options =>
+                .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
                 {
                     options.ClientId = "116681063698-gnuds2j676l6rutblab6o8umuqs6m8ra.apps.googleusercontent.com";
                     options.ClientSecret = "RjLr2mkyMjiEXRRYaV8TKmMp";
-            
+
                     options.CorrelationCookie.SameSite = SameSiteMode.None;
-            
-                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-                });;
+                })
+                .AddMicrosoftAccount(MicrosoftAccountDefaults.AuthenticationScheme, options =>
+                {
+                    options.ClientId = "627c7829-05cd-425b-9723-4d530049f57b";
+                    options.ClientSecret = "934145e9-6b75-43e0-9096-425cc6e66712";
+                    options.CorrelationCookie.SameSite = SameSiteMode.None;
+                });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -176,7 +182,6 @@ namespace UltimateTrivia
 
                 branch.UseRouting();
                 branch.UseAuthentication();
-                app.UseIdentityServer();
                 branch.UseAuthorization();
 
                 branch.UseEndpoints(endpoints =>
