@@ -1,5 +1,8 @@
+using System.Collections.Generic;
 using System.Text.Json;
 using BackgroundScheduler;
+using IdentityServer4;
+using IdentityServer4.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
@@ -108,16 +111,25 @@ namespace UltimateTrivia
 
             services.AddIdentityServer(options =>
                 {
+                    options.Events.RaiseErrorEvents = true;
+                    options.Events.RaiseInformationEvents = true;
+                    options.Events.RaiseFailureEvents = true;
+                    options.Events.RaiseSuccessEvents = true;
                 })
                 .AddApiAuthorization<IdentityUser, IdentityDbContext>(options =>
                 {
-                    options.Clients.AddIdentityServerSPA("Swagger", builder =>
+                    options.Clients.Add(new Client
                     {
-                        builder
-                            .WithRedirectUri("https://localhost:5001/swagger/oauth2-redirect.html")
-                            .WithRedirectUri("https://editor.swagger.io/oauth2-redirect.html")
-                            .WithScopes("openid", "profile", "email")
-                            .WithoutClientSecrets();
+                        Enabled   = true,
+                        AllowedScopes = new List<string>() {"UltimateTriviaAPI"},
+                        ClientId = "Swagger",
+                        ClientName = "Swagger",
+                        RedirectUris = new List<string>() {"https://localhost:5001/swagger/oauth2-redirect.html", "https://marceljenner.com:5001/swagger/oauth2-redirect.html"},
+                        AllowedGrantTypes = GrantTypes.Code,
+                        RequireClientSecret = false,
+                        RequirePkce = true,
+                        AllowAccessTokensViaBrowser = true,
+                        RequireConsent = false
                     });
                     
                     options.Clients.AddSPA("ultimate-trivia-client", options =>
@@ -126,9 +138,13 @@ namespace UltimateTrivia
                             .WithoutClientSecrets()
                             .WithRedirectUri("https://localhost:1234/signin-oidc")
                             .WithRedirectUri("https://marceljenner.com:1234/signin-oidc")
-                            .WithLogoutRedirectUri("https://localhost:1234/sigout-oidc")
-                            .WithLogoutRedirectUri("https://marceljenner.com:1234/sigout-oidc");
+                            .WithLogoutRedirectUri("https://localhost:1234/signout-oidc")
+                            .WithLogoutRedirectUri("https://marceljenner.com:1234/signout-oidc");
                     });
+                    
+                    // options.Clients["ultimate-trivia-client"].Claims.Add(ClaimTypes.NameIdentifier);
+                
+                    options.IdentityResources.AddEmail();
                 });
 
             services.AddAuthentication()
@@ -139,7 +155,9 @@ namespace UltimateTrivia
                     options.ClientSecret = "RjLr2mkyMjiEXRRYaV8TKmMp";
             
                     options.CorrelationCookie.SameSite = SameSiteMode.None;
-                });
+            
+                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                });;
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -158,6 +176,7 @@ namespace UltimateTrivia
 
                 branch.UseRouting();
                 branch.UseAuthentication();
+                app.UseIdentityServer();
                 branch.UseAuthorization();
 
                 branch.UseEndpoints(endpoints =>

@@ -249,7 +249,7 @@ export default class App extends Component {
 
       fetch("https://marceljenner.com:5001/debug", {
         headers: {
-          "Authentication": "Bearer " + user.access_token
+          "Authorization": "Bearer " + user.access_token
         }
       })
     })   

@@ -6,7 +6,7 @@ namespace UltimateTrivia.Controllers
 {
     [Produces(MediaTypeNames.Application.Json)]
     [ApiController]
-    [AllowAnonymous] // TODO require auth
+    [Authorize()]
     [Route("api/v{version:apiVersion}/[controller]")]
     public abstract class BaseApiController : ControllerBase
     {

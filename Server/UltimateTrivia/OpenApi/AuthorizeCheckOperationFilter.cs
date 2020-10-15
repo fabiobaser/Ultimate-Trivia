@@ -31,7 +31,7 @@ namespace UltimateTrivia.OpenApi
                                     Id = "oauth2"
                                 }
                             }
-                        ] = new[] {"api1"}
+                        ] = new[] {"UltimateTriviaAPI"}
                     }
                 };
 
