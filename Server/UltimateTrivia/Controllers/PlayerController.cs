@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using UltimateTrivia.Application;
-using UltimateTrivia.BackgroundJobs;
 
 namespace UltimateTrivia.Controllers
 {

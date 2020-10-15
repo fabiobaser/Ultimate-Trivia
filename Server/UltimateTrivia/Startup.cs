@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using BackgroundScheduler;
-using IdentityServer4;
 using IdentityServer4.Models;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Builder;

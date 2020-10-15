@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using UltimateTrivia.Application.Game;
+using UltimateTrivia.Application.Game.TransitionData;
 using UltimateTrivia.Constants;
 using UltimateTrivia.Exceptions;
 using UltimateTrivia.Hubs;

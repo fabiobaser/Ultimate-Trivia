@@ -72,6 +72,18 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Remove="ClientApp_dumm\public\favicon.ico" />
+      <None Update="Certificate\fullchain.pem">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Certificate\localhost.crt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Certificate\localhost.key">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Certificate\privkey.pem">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
     <ItemGroup>

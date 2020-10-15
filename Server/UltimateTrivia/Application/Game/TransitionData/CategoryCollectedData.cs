@@ -1,4 +1,4 @@
-﻿namespace UltimateTrivia.Application.Game
+﻿namespace UltimateTrivia.Application.Game.TransitionData
 {
     public class CategoryCollectedData
     {
