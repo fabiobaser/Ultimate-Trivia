@@ -138,7 +138,7 @@ namespace UltimateTrivia.Application
 
             if (lobby == null)
             {
-                throw new ApplicationException("User is not inside a lobby");
+                throw new ApplicationException("User is not in a lobby");
             }
 
             if (lobby.GameId == null)

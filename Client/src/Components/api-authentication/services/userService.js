@@ -5,7 +5,7 @@ import { storeUserError, storeUser } from '../actions/authActions'
 //   authority: "https://localhost:5001",
 //   client_id: "ultimate-trivia-client",
 //   redirect_uri: "http://localhost:1234/signin-oidc",
-//   response_type: "id_token token",
+//   response_type: "code",
 //   scope: "openid profile UltimateTriviaAPI",
 //   post_logout_redirect_uri: "http://localhost:1234/signout-oidc",
 // };
