@@ -227,7 +227,9 @@ namespace UltimateTrivia.Application.Game
 
             _gameState.CurrentQuestionStartedAt = _dateProvider.Now;
 
-            _gameState.CurrentAnswers = question.Answers.Select(a => new GameState.Answer
+            var answers = question.Answers.OrderBy(a => Guid.NewGuid()).ToList();
+            
+            _gameState.CurrentAnswers = answers.Select(a => new GameState.Answer
             {
                 Content = a.Content,
                 IsCorrect = a.IsCorrectAnswer
@@ -242,7 +244,7 @@ namespace UltimateTrivia.Application.Game
                 new ShowQuestionEvent
                 {
                     Question = question.Content,
-                    Answers = question.Answers.Select(a => a.Content).OrderBy(a => Guid.NewGuid()).ToList()
+                    Answers = answers.Select(a => a.Content).ToList()
                 }, cancellationToken: ct);
             
             await MoveNext(EGameStateTransition.WaitForAnswers, ct);
