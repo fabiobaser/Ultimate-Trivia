@@ -5,13 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using UltimateTrivia.Application.Game;
 using UltimateTrivia.Application.Game.TransitionData;
 using UltimateTrivia.Constants;
 using UltimateTrivia.Exceptions;
 using UltimateTrivia.Hubs;
 using UltimateTrivia.Hubs.Events;
 using UltimateTrivia.Services;
+using CategorySelectedEvent = UltimateTrivia.Application.Game.TransitionData.CategorySelectedEvent;
 
 namespace UltimateTrivia.Application
 {
@@ -64,7 +64,7 @@ namespace UltimateTrivia.Application
             }
         }
         
-        public async Task<Lobby> CreateLobbyAsync(string playerName)
+        public async Task<Lobby> CreateLobbyAsync(PlayerData playerData)
         {
             string lobbyId;
             do
@@ -73,62 +73,70 @@ namespace UltimateTrivia.Application
             } 
             while (Lobbies.ContainsKey(lobbyId));
             
-            var lobby = new Lobby(lobbyId, playerName);
+            var lobby = new Lobby(lobbyId, playerData.Id);
             Lobbies[lobbyId] = lobby;
 
             return lobby;
         }
     
-        public async Task JoinLobbyAsync(string lobbyId, string username, string connectionId)
+        public async Task JoinLobbyAsync(string lobbyId, PlayerData playerData, string connectionId)
         {
             if (!Lobbies.ContainsKey(lobbyId))
             {
                 throw new ApplicationException("lobby doesnt exist");
             }
 
-            var playerInLobby = _playerManager.GetPlayerInLobby(lobbyId).Select(u => u.Name).ToList();
+            var playerInLobby = _playerManager.GetPlayerInLobby(lobbyId).Select(u => u.Data).ToList();
 
-            if (playerInLobby.Contains(username))
+            if (playerInLobby.Any(p => p.Name == playerData.Name))
             {
                 throw new DuplicateUserNameException("Username already taken");
             }
             
+            if (playerInLobby.Any(p => p.Id == playerData.Id))
+            {
+                throw new ApplicationException("User already joined this lobby");
+            }
+            
             _playerManager.JoinLobby(connectionId, lobbyId);
 
-            playerInLobby = _playerManager.GetPlayerInLobby(lobbyId).Select(u => u.Name).ToList();
+            playerInLobby = _playerManager.GetPlayerInLobby(lobbyId).Select(u => u.Data).ToList();
 
-            await _hubContext.Clients.Group(lobbyId).SendAsync(RpcFunctionNames.UserJoinedLobby, new UserJoinedEvent
+            await _hubContext.Clients.Group(lobbyId).SendAsync(RpcFunctionNames.UserJoinedLobby, new PlayerJoinedEvent
             {
-                NewUser = username,
-                Usernames = playerInLobby
+                NewPlayer = playerData,
+                Players = playerInLobby
             });
             
             await _hubContext.Clients.Client(connectionId).SendAsync(RpcFunctionNames.JoinLobby, new JoinLobbyEvent
             {
                 LobbyId = lobbyId,
-                Creator = Lobbies[lobbyId].Creator,
-                Usernames = playerInLobby
+                CreatorId = Lobbies[lobbyId].CreatorId,
+                Players = playerInLobby
             });
         }
 
         public async Task LeaveLobbyAsync(string connectionId)
         {
-            var user = _playerManager.GetPlayerByConnectionId(connectionId);
-            if (user.LobbyId == null)
+            var player = _playerManager.GetPlayerByConnectionId(connectionId);
+            if (player.LobbyId == null)
             {
                 throw new ApplicationException("user is not in a lobby");
             }
             
-            var leftLobbyId = user.LobbyId;
+            var leftLobbyId = player.LobbyId;
             _playerManager.LeaveLobby(connectionId);
             
             var playerInLobby = _playerManager.GetPlayerInLobby(leftLobbyId);
             
-            await _hubContext.Clients.Group(leftLobbyId).SendAsync(RpcFunctionNames.UserLeftLobby, new UserLeftEvent
+            await _hubContext.Clients.Group(leftLobbyId).SendAsync(RpcFunctionNames.UserLeftLobby, new PlayerLeftEvent
             {
-                LeavingUser = user.Name,
-                Usernames = playerInLobby.Select(u => u.Name).ToList()
+                LeavingPlayer = player.Data,
+                Players = playerInLobby.Select(u => u.Data).ToList()
             });
+            
+            await _hubContext.Clients.Client(connectionId).SendAsync(RpcFunctionNames.LeaveLobby);
+
         }
 
         public async Task StartGameAsync(string connectionId, StartGameEvent startGameEvent)
@@ -192,17 +200,17 @@ namespace UltimateTrivia.Application
             switch (transition)
             {
                 case Game.Game.EGameStateTransition.CollectCategory:
-                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategoryCollectedData
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategorySelectedEvent
                     {
                         Category = data,
-                        Username = player.Name
+                        CurrentPlayer = player.Data
                     });
                     break;
                 case Game.Game.EGameStateTransition.CollectAnswers:
-                    _gameManager.PassEventToGame(lobby.GameId, transition, new AnswerCollectedData()
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new AnswerSelectedEvent()
                     {
-                        Answer = data,
-                        Username = player.Name
+                        AnswerId = data,
+                        Player = player.Data
                     });
                     break;
             }

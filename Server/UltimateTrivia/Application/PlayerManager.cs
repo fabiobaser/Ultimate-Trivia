@@ -26,14 +26,17 @@ namespace UltimateTrivia.Application
             return Players.Where(kv => kv.Value.LobbyId != null).Select(kv => kv.Value.LobbyId).Distinct().ToList();
         }
         
-        public void AddPlayer(string playerName, string connectionId)
+        public void AddPlayer(PlayerData playerData, string connectionId, string userIdentifier)
         {
+            playerData.Id = userIdentifier ?? Guid.NewGuid().ToString();
+            
             if (!Players.ContainsKey(connectionId))
             {
                 Players[connectionId] = new Player
                 {
-                    Name = playerName,
-                    ConnectionId = connectionId
+                    Data = playerData,
+                    ConnectionId = connectionId,
+                    IdentityId = userIdentifier
                 };
             }
         }

@@ -37,9 +37,9 @@ namespace UltimateTrivia.Hubs
             {
                 var player = _playerManager.GetPlayerByConnectionId(Context.ConnectionId);
             
-                _logger.LogDebug("{username} posted message {message}", player.Name, message);
+                _logger.LogDebug("{userId} posted message {message}", player.Data.Id, message);
             
-                await Clients.Group(player.LobbyId).SendAsync(RpcFunctionNames.BroadcastMessage, player.Name, message);
+                await Clients.Group(player.LobbyId).SendAsync(RpcFunctionNames.BroadcastMessage, player.Data, message);
             }
             catch (Exception e)
             {
@@ -47,14 +47,14 @@ namespace UltimateTrivia.Hubs
             }
         }
         
-        public async Task JoinLobby(string username, string lobbyId)
+        public async Task JoinLobby(PlayerData playerData, string lobbyId)
         {
             try
             {
-                _logger.LogDebug("{username} joined lobby {lobbyId}", username, lobbyId);
-                _playerManager.AddPlayer(username, Context.ConnectionId);
+                _logger.LogDebug("{playerId} joined lobby {lobbyId}", playerData.Id, lobbyId);
+                _playerManager.AddPlayer(playerData, Context.ConnectionId, Context.UserIdentifier);
             
-                await _lobbyManager.JoinLobbyAsync(lobbyId, username, Context.ConnectionId);
+                await _lobbyManager.JoinLobbyAsync(lobbyId, playerData, Context.ConnectionId);
                 await Groups.AddToGroupAsync(Context.ConnectionId, lobbyId);
             }
             catch (Exception e)
@@ -63,17 +63,17 @@ namespace UltimateTrivia.Hubs
             }
         }
         
-        public async Task CreateLobby(string username)
+        public async Task CreateLobby(PlayerData playerData)
         {
             try
             {
-                _playerManager.AddPlayer(username, Context.ConnectionId);
+                _playerManager.AddPlayer(playerData, Context.ConnectionId, Context.UserIdentifier);
             
-                var lobby = await _lobbyManager.CreateLobbyAsync(username);
+                var lobby = await _lobbyManager.CreateLobbyAsync(playerData);
             
-                _logger.LogDebug("{username} created lobby {lobbyId}", username, lobby.Id);
+                _logger.LogDebug("{username} created lobby {lobbyId}", playerData.Id, lobby.Id);
             
-                await _lobbyManager.JoinLobbyAsync(lobby.Id, username, Context.ConnectionId);
+                await _lobbyManager.JoinLobbyAsync(lobby.Id, playerData, Context.ConnectionId);
                 await Groups.AddToGroupAsync(Context.ConnectionId, lobby.Id);
         
             }
@@ -90,10 +90,9 @@ namespace UltimateTrivia.Hubs
                 var player = _playerManager.GetPlayerByConnectionId(Context.ConnectionId);
                 if (player.LobbyId != null)
                 {
-                    _logger.LogDebug("{username} left lobby {lobbyId}", player.Name, player.LobbyId);
+                    _logger.LogDebug("{username} left lobby {lobbyId}", player.Data.Id, player.LobbyId);
                     await Groups.RemoveFromGroupAsync(Context.ConnectionId, player.LobbyId);
                     await _lobbyManager.LeaveLobbyAsync(Context.ConnectionId);
-                    await Clients.Caller.SendAsync(RpcFunctionNames.LeaveLobby);
                 }
         
             }
@@ -127,11 +126,11 @@ namespace UltimateTrivia.Hubs
             }
         }
         
-        public async Task AnswerSelected(string answer)
+        public async Task AnswerSelected(string answerId)
         {
             try
             {
-                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameStateTransition.CollectAnswers,answer);
+                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameStateTransition.CollectAnswers,answerId);
             }
             catch (Exception e)
             {

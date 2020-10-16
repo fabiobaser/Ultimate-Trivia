@@ -3,12 +3,12 @@
     public class Lobby
     {
         public string Id { get; set; }
-        public string Creator { get; set; }
+        public string CreatorId { get; set; }
         public string GameId { get; set; }
         
-        public Lobby(string lobbyId, string creator)
+        public Lobby(string lobbyId, string creatorIdId)
         {
-            Creator = creator;
+            CreatorId = creatorIdId;
             Id = lobbyId;
         }
 

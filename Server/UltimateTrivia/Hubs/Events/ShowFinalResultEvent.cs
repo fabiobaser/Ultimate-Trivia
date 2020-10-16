@@ -4,6 +4,6 @@ namespace UltimateTrivia.Hubs.Events
 {
     public class ShowFinalResultEvent
     {
-        public Dictionary<string, int> Points { get; set; }
+        public Dictionary<string, int> Points { get; set; } = new Dictionary<string, int>();
     }
 }

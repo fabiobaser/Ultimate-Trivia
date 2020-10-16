@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
+using UltimateTrivia.Hubs.Events.Models;
 
 namespace UltimateTrivia.Hubs.Events
 {
     public class ShowQuestionEvent
     {
         public string Question { get; set; }
-        public List<string> Answers { get; set; }
+        public List<Answer> Answers { get; set; }
     }
 }

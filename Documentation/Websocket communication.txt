@@ -1,0 +1,151 @@
+SERVER:
+
+PlayerData {
+	string id
+	string name
+	string avatarJson
+}
+
+StartGameEvent {
+	int rounds,
+	int answerDuration
+}
+
+createLobby(PlayerData)
+joinLobby(PlayerData, string lobbyId)
+leaveLobby()
+startGame(StartGameEvent)
+categorySelected(string category)
+answerSelected(string answerId)
+
+
+
+
+CLIENT:
+
+PlayerData {
+	string id
+	string name
+	string avatarJson
+}
+
+Answer {
+	string content,
+	string id
+}
+
+PlayerAnswer {
+	Answer answer
+	bool correct
+	PlayerData[] SelectedBy
+}
+
+PlayerJoinedEvent {
+	PlayerData newPlayer
+	PayerData[] players
+}
+
+JoinLobbyEvent {
+	string lobbyId
+	string creatorId // PlayerId
+	PlayerData[] players
+}
+
+PlayerLeftEvent {
+	PlayerData leavingPlayer
+	PlayerData[] players
+}
+
+ShowCategoriesEvent {
+	string[] categories
+	PlayerData currentPlayer
+}
+
+CategorySelectedEvent {
+	string category
+	PlayerData currentPlayer
+}
+
+ShowQuestionEvent {
+	string question
+	Answer[] answers
+}
+
+PlayerAnsweredEvent {
+	PlayerData Player
+	PlayerData[] RemainingPlayers  // players that havnt answered yet
+}
+
+HighlightCorrectAnswerEvent {
+	PlayerAnswer[] Answers
+}
+
+UpdatePointsEvent {
+	Dictionary<string userId, int points> Points
+}
+
+ShowFinalResult {
+	Dictionary<string userId, int points> Points
+}
+
+
+userJoinedLobby(PlayerJoinedEvent)
+joinLobby(JoinLobbyEvent)
+userLeftLobby(PlayerLeftEvent)
+leaveLobby()
+gameStarted()
+showCategories(ShowCategoriesEvent)
+categorySelected(CategorySelectedEvent)	// changed from categoryChoosen
+showQuestion(ShowQuestionEvent)
+playerAnswered(PlayerAnsweredEvent)   	// changed from userAnswered
+highlightCorrectAnswer(HighlightCorrectAnswerEvent)
+updatePoints(UpdatePointsEvent)
+showFinalResult(ShowFinalResult)
+
+
+
+
+
+FLOW:
+
+SendMessage
+    -> [Lobby] broadcastMessage 
+
+JoinLobby
+    -> [Lobby] userJoinedLobby 
+    -> [Caller]  joinLobby 
+
+CreateLobby
+  ->  [Caller]  joinLobby 
+
+LeaveLobby
+   -> [Lobby] userLeftLobby 
+   -> [Caller] leaveLobby 
+
+
+
+startGame
+	-> [Lobby] gameStarted
+	-> [Lobby] showCategories
+
+
+categorySelected
+	-> [Lobby] categorySelected
+	-> [Lobby] showQuestion
+
+answerSelected
+	-> [Lobby] playerAnswered
+	
+	--- All Players answered ---
+	-> [Lobby] highlightCorrectAnswer
+	-> [Lobby] updatePoints
+	
+	--- Last Round ---
+	-> showFinalResult
+
+
+
+
+
+
+
