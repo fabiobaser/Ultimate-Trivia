@@ -29,6 +29,8 @@ export default class GameView extends Component {
   };
 
   handleSelect = (entryIndex, entry) => {
+    const { gameState } = this.props;
+    if (gameState === "questionsResult") return;
     this.setState({ selectedItemIndex: entryIndex, selectedItem: entry });
   };
 
@@ -203,7 +205,12 @@ export default class GameView extends Component {
               <p id={"question"}>{questionText}</p>
             </div>
             <div id={"answersContainer"}>
-              <List selection divided verticalAlign="middle" size={"huge"}>
+              <List
+                selection={gameState !== "questionsResult"}
+                divided
+                verticalAlign="middle"
+                size={"huge"}
+              >
                 {selectionArray.map((entry, entryIndex) => {
                   return (
                     <Answer
@@ -220,12 +227,14 @@ export default class GameView extends Component {
                     />
                   );
                 })}
-                <List.Item
-                  id={"answerSubmitButton"}
-                  onClick={this.handleSubmit}
-                >
-                  {gameState === "topicSelect" ? "Auswählen" : "Beantworten"}
-                </List.Item>
+                {gameState !== "questionsResult" && (
+                  <List.Item
+                    id={"answerSubmitButton"}
+                    onClick={this.handleSubmit}
+                  >
+                    {gameState === "topicSelect" ? "Auswählen" : "Beantworten"}
+                  </List.Item>
+                )}
               </List>
             </div>
           </div>
