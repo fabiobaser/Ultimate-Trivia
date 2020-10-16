@@ -64,6 +64,8 @@ export default class GameView extends Component {
       topics,
       points,
       question,
+      name,
+      lobbyCreator,
       possibleAnswers,
       results,
     } = this.props;
@@ -137,7 +139,7 @@ export default class GameView extends Component {
               onClick={() => copyLobbyId()}
             />
           </Button.Group>
-          {gameState === "lobby" && (
+          {gameState === "lobby" && lobbyCreator === name && (
             <Button
               fluid
               color={"green"}

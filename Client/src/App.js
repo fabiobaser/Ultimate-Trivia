@@ -7,9 +7,9 @@ import "./App.scss";
 
 import GameView from "./Components/GameView";
 
-import { signinRedirect } from './Components/api-authentication/services/userService'
-import { loadUserFromStorage } from './Components/api-authentication/services/userService'
-import store from './redux/store';
+import { signinRedirect } from "./Components/api-authentication/services/userService";
+import { loadUserFromStorage } from "./Components/api-authentication/services/userService";
+import store from "./redux/store";
 
 export default class App extends Component {
   constructor(props) {
@@ -97,10 +97,13 @@ export default class App extends Component {
     this.connection.on("joinLobby", (joinLobbyEvent) => {
       this.pushtToChat("", "Du bist dem Spiel beigetreten");
 
+      console.log("%cjoinLobbyEvent: ", "color: blue", joinLobbyEvent);
+
       //this.copyLobbyId(joinLobbyEvent.lobbyId);
 
       this.setState({
         userArray: joinLobbyEvent.usernames,
+        lobbyCreator: joinLobbyEvent.creator,
         connectedToLobby: true,
         lobbyId: joinLobbyEvent.lobbyId,
         inGame: false,
@@ -109,6 +112,8 @@ export default class App extends Component {
     });
 
     this.connection.on("userJoinedLobby", (userJoinedEvent) => {
+      console.debug("%cuserJoinedEvent: ", "color: blue", userJoinedEvent);
+
       this.pushtToChat(
         "",
         `${userJoinedEvent.newUser} ist dem Spiel beigetreten`
@@ -234,29 +239,26 @@ export default class App extends Component {
     this.setState({ nameModalOpen: false });
   };
 
-  
-  
   // AUTHENTICATION TEST PLAYGROUND
-   
+
   login = () => {
-    signinRedirect()
-  }
-  
+    signinRedirect();
+  };
+
   callApi = () => {
-    
     loadUserFromStorage(store).then((user) => {
       console.log(user);
 
       fetch("https://marceljenner.com:5001/debug", {
         headers: {
-          "Authorization": "Bearer " + user.access_token
-        }
-      })
-    })   
-  }
+          Authorization: "Bearer " + user.access_token,
+        },
+      });
+    });
+  };
 
   // ----------------------
-  
+
   render() {
     const {
       lobbyId,
@@ -268,6 +270,7 @@ export default class App extends Component {
       question,
       possibleAnswers,
       results,
+      lobbyCreator,
       points,
     } = this.state;
 
@@ -343,6 +346,8 @@ export default class App extends Component {
           ) && (
             <GameView
               chat={chat}
+              name={name}
+              lobbyCreator={lobbyCreator}
               sendMessage={this.sendMessage}
               userArray={userArray}
               lobbyId={lobbyId}
