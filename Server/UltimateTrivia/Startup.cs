@@ -162,8 +162,6 @@ namespace UltimateTrivia
                     options.ClientSecret = "934145e9-6b75-43e0-9096-425cc6e66712";
                     options.CorrelationCookie.SameSite = SameSiteMode.None;
                 });
-            
-            
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
