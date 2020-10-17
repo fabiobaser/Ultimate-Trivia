@@ -1,0 +1,32 @@
+# This is a basic workflow to help you get started with Actions
+
+name: build and deploy Client
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the develop branch
+on:
+  push:
+    paths:
+      - 'client/**'
+    branches: [ develop ]
+
+jobs:
+  build_and_deploy_client:
+    runs-on: self-hosted
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build container
+        run: docker build -t ultimate-trivia-client ./client
+
+      - name: stop container
+        continue-on-error: true
+        run:  docker stop ultimate-trivia-client
+        
+      - name: remove container
+        continue-on-error: true
+        run:  docker rm ultimate-trivia-client
+        
+      - name: run container        
+        run:  docker run -d -p 80:80 -p 433:433 --name=ultimate-trivia-client ultimate-trivia-client .
