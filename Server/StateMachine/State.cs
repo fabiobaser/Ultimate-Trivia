@@ -13,8 +13,9 @@ namespace StateMachine
         public Enum Name { get; }
         private StateEventHandler OnStateEnter;
         private StateEventHandler OnStateExit;
+        private StateEventHandler OnStateTimeout;
         public List<Transition> Transitions = new List<Transition>();
-        public double Timeout { get; private set; }
+        public TimeSpan TimeoutDuration { get; private set; }
 
         public State(Enum name)
         {
@@ -34,14 +35,15 @@ namespace StateMachine
             return this;
         }
 
+        public State OnTimeout(StateEventHandler onTimeout)
+        {
+            OnStateTimeout = onTimeout;
+            return this;
+        }
+
         public State TimeoutAfter(TimeSpan timeout)
         {
-            return TimeoutAfter(timeout.TotalMilliseconds);
-        }
-        
-        public State TimeoutAfter(double timeout)
-        {
-            Timeout = timeout;
+            TimeoutDuration = timeout;
             return this;
         }
 
@@ -55,10 +57,15 @@ namespace StateMachine
             if (OnStateExit != null) await OnStateExit(data, ct);
         }
 
+        public async Task Timeout(object data, CancellationToken ct)
+        {
+            if (OnStateTimeout != null) await OnStateTimeout(data, ct);
+        }
+
         public Transition On(Enum command)
         {
-            if (command.GetType() != typeof(StateMachineBaseCommand) && Enum.IsDefined(typeof(StateMachineBaseCommand), command.ToString()))
-                throw new Exception($"\"{command}\" is already defined in {nameof(StateMachineBaseCommand)}! please use this one and remove it from {command.GetType()}");
+            if (command.GetType() != typeof(StateMachineBaseTransition) && Enum.IsDefined(typeof(StateMachineBaseTransition), command.ToString()))
+                throw new Exception($"\"{command}\" is already defined in {nameof(StateMachineBaseTransition)}! please use this one and remove it from {command.GetType()}");
 
             if (Transitions.Exists(trans => trans.Command.Equals(command)))
                 throw new Exception($"A transition for {Name} --> {command} already exists");

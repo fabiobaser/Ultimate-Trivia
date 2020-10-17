@@ -55,11 +55,17 @@ namespace UltimateTrivia.Application
                 throw new ApplicationException($"failed to delete game {gameId}");
             }
         }
-
-        public void PassEventToGame(string gameId, Game.Game.EGameStateTransition transition, object data = null)
+        
+        public void PassTransitionToGame(string gameId, Enum transition, object data = null)
         {
             var host = _gameHosts[gameId];
             host.Game.EnqueueTransition(transition, data);
+        }
+
+        public void PassEventToGame(string gameId, Enum evt, object data = null)
+        {
+            var host = _gameHosts[gameId];
+            host.Game.EnqueueEvent(evt, data);
         }
 
         public void Dispose()

@@ -118,7 +118,7 @@ namespace UltimateTrivia.Hubs
         {
             try
             {
-                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameStateTransition.CollectCategory, category);
+                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameEvent.CategorySelected, category);
             }
             catch (Exception e)
             {
@@ -130,7 +130,7 @@ namespace UltimateTrivia.Hubs
         {
             try
             {
-                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameStateTransition.CollectAnswers,answerId);
+                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameEvent.AnswerSelected,answerId);
             }
             catch (Exception e)
             {

@@ -11,7 +11,6 @@ using UltimateTrivia.Exceptions;
 using UltimateTrivia.Hubs;
 using UltimateTrivia.Hubs.Events;
 using UltimateTrivia.Services;
-using CategorySelectedEvent = UltimateTrivia.Application.Game.TransitionData.CategorySelectedEvent;
 
 namespace UltimateTrivia.Application
 {
@@ -114,6 +113,15 @@ namespace UltimateTrivia.Application
                 CreatorId = Lobbies[lobbyId].CreatorId,
                 Players = playerInLobby
             });
+            
+            var lobby = Lobbies[lobbyId];
+            if (lobby.GameId != null && _gameManager.IsGameInProgress(lobby.GameId))
+            {
+                _gameManager.PassEventToGame(lobby.GameId, Game.Game.EGameEvent.PlayerJoined, new PlayerJoinedData
+                {
+                    Player = playerData
+                });
+            }
         }
 
         public async Task LeaveLobbyAsync(string connectionId)
@@ -136,7 +144,16 @@ namespace UltimateTrivia.Application
             });
             
             await _hubContext.Clients.Client(connectionId).SendAsync(RpcFunctionNames.LeaveLobby);
-
+            
+            var lobby = Lobbies[player.LobbyId];
+            if (lobby.GameId != null && _gameManager.IsGameInProgress(lobby.GameId))
+            {
+                _gameManager.PassEventToGame(lobby.GameId, Game.Game.EGameEvent.PlayerLeft, new PlayerLeftData
+                {
+                   LeavingPlayer = player.Data
+                });
+            }
+            
         }
 
         public async Task StartGameAsync(string connectionId, StartGameEvent startGameEvent)
@@ -158,7 +175,7 @@ namespace UltimateTrivia.Application
                 });
             
                 lobby.ConnectToGame(gameId);
-                _gameManager.PassEventToGame(gameId, Application.Game.Game.EGameStateTransition.StartGame, new GameStartedData
+                _gameManager.PassTransitionToGame(gameId, Game.Game.EGameCommand.StartGame, new GameStartedData
                 {
                     Rounds = startGameEvent.Rounds,
                     AnswerDuration = startGameEvent.AnswerDuration
@@ -166,22 +183,21 @@ namespace UltimateTrivia.Application
             }
             else
             {
-                if (!_gameManager.IsGameInProgress(lobby.GameId))
+                if (_gameManager.IsGameInProgress(lobby.GameId))
                 {
-                    _gameManager.PassEventToGame(lobby.GameId, Application.Game.Game.EGameStateTransition.StartGame, new GameStartedData
+                    throw new GameInProgressException($"Game {lobby.GameId} is already in progress");
+                }
+
+                _gameManager.PassTransitionToGame(lobby.GameId, Game.Game.EGameCommand.StartGame,
+                    new GameStartedData
                     {
                         Rounds = startGameEvent.Rounds,
                         AnswerDuration = startGameEvent.AnswerDuration
                     });
-                }
-                else
-                {
-                    throw new GameInProgressException($"Game {lobby.GameId} is already in progress");
-                }
             }
         }
 
-        public async Task PassEventToGame(string connectionId, Game.Game.EGameStateTransition transition, string data)
+        public async Task PassEventToGame(string connectionId, Game.Game.EGameEvent transition, string data)
         {
             var player = _playerManager.GetPlayerByConnectionId(connectionId);
 
@@ -199,15 +215,15 @@ namespace UltimateTrivia.Application
 
             switch (transition)
             {
-                case Game.Game.EGameStateTransition.CollectCategory:
-                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategorySelectedEvent
+                case Game.Game.EGameEvent.CategorySelected:
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new CategorySelectedData
                     {
                         Category = data,
-                        CurrentPlayer = player.Data
+                        Player = player.Data
                     });
                     break;
-                case Game.Game.EGameStateTransition.CollectAnswers:
-                    _gameManager.PassEventToGame(lobby.GameId, transition, new AnswerSelectedEvent()
+                case Game.Game.EGameEvent.AnswerSelected:
+                    _gameManager.PassEventToGame(lobby.GameId, transition, new AnswerSelectedData
                     {
                         AnswerId = data,
                         Player = player.Data

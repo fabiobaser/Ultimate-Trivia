@@ -3,7 +3,7 @@ using UltimateTrivia.Application;
 
 namespace UltimateTrivia.Hubs.Events
 {
-    public class PlayerAnsweredEvent
+    public class AnswerSelectedEvent
     {
         public PlayerData Player { get; set; }
         public List<PlayerData> RemainingPlayers { get; set; }

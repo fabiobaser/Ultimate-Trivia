@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +13,6 @@ using UltimateTrivia.Hubs.Events;
 using UltimateTrivia.Hubs.Events.Models;
 using UltimateTrivia.Services;
 using Utils;
-using CategorySelectedEvent = UltimateTrivia.Application.Game.TransitionData.CategorySelectedEvent;
 
 namespace UltimateTrivia.Application.Game
 {
@@ -26,28 +24,32 @@ namespace UltimateTrivia.Application.Game
             StartingNewRound,
             ShowingCategories,
             WaitingForCategory,
-            CollectingCategory,
             ShowingQuestion,
             WaitingForAnswers,
-            CollectingAnswers,
             HighlightingCorrectAnswer,
             CalculatingPoints,
             ShowingFinalResult
         }
 
-        public enum EGameStateTransition
+        public enum EGameCommand
         {
             StartGame,
             StartNewRound,
             ShowCategories,
             WaitForCategory,
-            CollectCategory,
             ShowQuestion,
             WaitForAnswers,
-            CollectAnswers,
             HighlightCorrectAnswer,
             CalculatePoints,
             ShowFinalResult
+        }
+
+        public enum EGameEvent
+        {
+            CategorySelected,
+            AnswerSelected,
+            PlayerJoined,
+            PlayerLeft
         }
 
 
@@ -69,165 +71,160 @@ namespace UltimateTrivia.Application.Game
             _configuration = configuration;
         }
 
-        protected override void AddStates()
+        #region Configuration
+
+        protected override void Configure()
         {
-            base.AddStates();
+            base.Configure();
 
             GetState(StateMachineBaseState.Idle)
-                .On(EGameStateTransition.StartGame).Goto(EGameState.Started);
+                .On(EGameCommand.StartGame).Goto(EGameState.Started);
 
             AddState(EGameState.Started)
-                .On(EGameStateTransition.StartNewRound).Goto(EGameState.StartingNewRound)
+                .On(EGameCommand.StartNewRound).Goto(EGameState.StartingNewRound)
                 .OnEnter(StartedEntered);
 
             AddState(EGameState.StartingNewRound)
-                .On(EGameStateTransition.ShowCategories).Goto(EGameState.ShowingCategories)
-                .On(EGameStateTransition.ShowFinalResult).Goto(EGameState.ShowingFinalResult)
-                .On(StateMachineBaseCommand.Done).Goto(StateMachineBaseState.Idle)
+                .On(EGameCommand.ShowCategories).Goto(EGameState.ShowingCategories)
+                .On(EGameCommand.ShowFinalResult).Goto(EGameState.ShowingFinalResult)
+                .On(StateMachineBaseTransition.Done).Goto(StateMachineBaseState.Idle)
                 .OnEnter(StartingNewRoundEnter);
 
             AddState(EGameState.ShowingCategories)
-                .On(EGameStateTransition.WaitForCategory).Goto(EGameState.WaitingForCategory)
+                .On(EGameCommand.WaitForCategory).Goto(EGameState.WaitingForCategory)
                 .OnEnter(ShowingCategoriesEnter);
 
             AddState(EGameState.WaitingForCategory)
-                .On(EGameStateTransition.CollectCategory).Goto(EGameState.CollectingCategory);
+                .On(EGameCommand.ShowQuestion).Goto(EGameState.ShowingQuestion)
+                .OnTimeout(WaitingForCategoryTimeout);
 
-            AddState(EGameState.CollectingCategory)
-                .On(EGameStateTransition.ShowQuestion).Goto(EGameState.ShowingQuestion)
-                .On(EGameStateTransition.WaitForCategory).Goto(EGameState.WaitingForCategory)
-                .OnEnter(CollectingCategoryEnter);
-            
             AddState(EGameState.ShowingQuestion)
-                .On(EGameStateTransition.WaitForAnswers).Goto(EGameState.WaitingForAnswers)
+                .On(EGameCommand.WaitForAnswers).Goto(EGameState.WaitingForAnswers)
                 .OnEnter(ShowingQuestionEnter);
 
             AddState(EGameState.WaitingForAnswers)
-                .On(EGameStateTransition.CollectAnswers).Goto(EGameState.CollectingAnswers);
-
-            AddState(EGameState.CollectingAnswers)
-                .On(EGameStateTransition.WaitForAnswers).Goto(EGameState.WaitingForAnswers)
-                .On(EGameStateTransition.HighlightCorrectAnswer).Goto(EGameState.HighlightingCorrectAnswer)
-                .OnEnter(CollectingAnswerEnter);
+                .On(EGameCommand.HighlightCorrectAnswer).Goto(EGameState.HighlightingCorrectAnswer)
+                .OnTimeout(WaitingForAnswersTimeout);
 
             AddState(EGameState.HighlightingCorrectAnswer)
-                .On(EGameStateTransition.CalculatePoints).Goto(EGameState.CalculatingPoints)
+                .On(EGameCommand.CalculatePoints).Goto(EGameState.CalculatingPoints)
                 .OnEnter(HighlightingCorrectAnswerEnter);
             
             AddState(EGameState.CalculatingPoints)
-                .On(EGameStateTransition.StartNewRound).Goto(EGameState.StartingNewRound)
+                .On(EGameCommand.StartNewRound).Goto(EGameState.StartingNewRound)
                 .OnEnter(CalculatingPointsEnter);
 
             AddState(EGameState.ShowingFinalResult)
-                .On(StateMachineBaseCommand.Done).Goto(StateMachineBaseState.Idle)
+                .On(StateMachineBaseTransition.Done).Goto(StateMachineBaseState.Idle)
                 .OnEnter(ShowingFinalResultEnter);
+
+            AddEvent(EGameEvent.CategorySelected).WithAction(HandleCategorySelected);
+            AddEvent(EGameEvent.AnswerSelected).WithAction(HandleAnswerSelected);
+            AddEvent(EGameEvent.PlayerJoined).WithAction(HandleUserJoined);
+            AddEvent(EGameEvent.PlayerLeft).WithAction(HandleUserLeft);
         }
 
-      
-
+        #endregion
+        
+        
+        #region Transitions 
+        
         private async Task StartedEntered(object data, CancellationToken ct)
         {
             if (!(data is GameStartedData gameStartedData))
             {
                 throw new ApplicationException($"unexpected data received {data.GetType()}");
             }
-
+            
             Logger.LogDebug("Game {gameId} started", Id);
             _gameState = new GameState
             {
                 CurrentRoundNr = 1,
                 CurrentQuestionNr = 1,
                 MaxRounds = gameStartedData.Rounds,
-                AnswerDuration = gameStartedData.AnswerDuration
             };
+
+            GetState(EGameState.WaitingForAnswers).TimeoutAfter(TimeSpan.FromSeconds(gameStartedData.AnswerDuration));
+            GetState(EGameState.WaitingForCategory).TimeoutAfter(TimeSpan.FromSeconds(gameStartedData.AnswerDuration));
+
+            LoadPlayers();
+
+            _gameState.Points = _gameState.Players.ToDictionary(p => p.Data.Id, p => 0);
             
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.GameStarted, cancellationToken: ct);
-            await MoveNext(EGameStateTransition.StartNewRound, ct);
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.GameStarted, new GameStartedEvent
+            {
+                CurrentRoundNr = _gameState.CurrentRoundNr,
+                CurrentQuestionNr = _gameState.CurrentQuestionNr,
+                Points = _gameState.Points
+            }, cancellationToken: ct);
+            await MoveNext(EGameCommand.StartNewRound, ct);
         }
         
         private async Task StartingNewRoundEnter(object data, CancellationToken ct)
         {
-            var players = _playerManager.GetPlayerInLobby(_configuration.LobbyId);
-
-            if (players.Count == 0)
-            {
-                await MoveNext(StateMachineBaseCommand.Done, ct);
-                return;
-            }
-            
-            _gameState.Players = players;
-            _gameState.CurrentPlayerAnswers = new List<GameState.PlayerAnswer>(); // clear answers from last round
-            
-            
-            var orderedPlayers = players.OrderBy(u => u.Data.Id).ToList();
-
-            // get next user in alphabetical order, return null when last user was reached
-            var next = orderedPlayers.FirstOrDefault(u => string.CompareOrdinal(u.Data.Id, _gameState.CurrentPlayer.Id) > 0);
+            // get next player in alphabetical order, return null when last player was reached
+            var next = _gameState.Players.FirstOrDefault(u => string.CompareOrdinal(u.Data.Id, _gameState.CurrentPlayer.Id) > 0);
 
             if (next == null)
             {
-                _gameState.CurrentRoundNr++;
-                next = orderedPlayers.First();
+                _gameState.NextRound();
+                next = _gameState.Players.First();
                 
                 // TODO: send event for newRound?
+            }
+            else
+            {
+                _gameState.NextQuestion();
+                
+                // TODO: send event for nextQuestion Round?
             }
 
             if (_gameState.CurrentRoundNr > _gameState.MaxRounds)
             {
-                await MoveNext(EGameStateTransition.ShowFinalResult, ct);
+                await MoveNext(EGameCommand.ShowFinalResult, ct);
                 return;
             }
             
             _gameState.CurrentPlayer = next.Data;
 
-            await MoveNext(EGameStateTransition.ShowCategories, ct);
+            await MoveNext(EGameCommand.ShowCategories, ct);
         }
         
         private async Task ShowingCategoriesEnter(object data, CancellationToken ct)
         {
-            var categories = await _questionRepository.GetRandomCategories(3);
+            _gameState.Categories = await _questionRepository.GetRandomCategories(3);
             
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowCategories, new ShowCategoriesEvent
             {
                 CurrentPlayer = _gameState.CurrentPlayer,
-                Categories = categories
+                Categories = _gameState.Categories
             }, ct);
 
-            await MoveNext(EGameStateTransition.WaitForCategory, ct);
+            await MoveNext(EGameCommand.WaitForCategory, ct);
         }
         
-        private async Task CollectingCategoryEnter(object data, CancellationToken ct)
+        private async Task WaitingForCategoryTimeout(object data, CancellationToken ct)
         {
-            if (!(data is CategorySelectedEvent categoryChosenEvent))
-            {
-                throw new ApplicationException($"unexpected data received {data.GetType()}");
-            }
+            Logger.LogInformation("no category selected. use random category");
+
+            _gameState.CurrentCategory = _gameState.Categories.First();
+                    
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
+                new CategorySelectedEvent
+                {
+                    Category = _gameState.CurrentCategory,
+                    Player = _gameState.CurrentPlayer
+                }, cancellationToken: ct);
+                    
+            await MoveNext(EGameCommand.ShowQuestion, ct);
             
-            if (categoryChosenEvent.CurrentPlayer.Id != _gameState.CurrentPlayer.Id)    // if some other user than current user choose a category go back to waiting for correct event
-            {
-                Logger.LogWarning("{userId} tried to select a category, but it is {currentUser}´s turn", categoryChosenEvent.CurrentPlayer.Id, _gameState.CurrentPlayer);
-                await MoveNext(EGameStateTransition.WaitForCategory, ct);
-            }
-            else
-            {
-                Logger.LogDebug("{userId} selected category {category}", categoryChosenEvent.CurrentPlayer.Id, categoryChosenEvent.Category);
-                _gameState.CurrentCategory = categoryChosenEvent.Category;
-                    
-                await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
-                    new CategorySelectedEvent
-                    {
-                        Category = categoryChosenEvent.Category,
-                        CurrentPlayer = categoryChosenEvent.CurrentPlayer
-                    }, cancellationToken: ct);
-                    
-                await MoveNext(EGameStateTransition.ShowQuestion, ct);
-            }
         }
         
         private async Task ShowingQuestionEnter(object data, CancellationToken ct)
         {
             var question = await _questionRepository.GetRandomQuestionsFromCategory(_gameState.CurrentCategory);
 
+            _gameState.CurrentQuestion = question.Content;
             _gameState.CurrentQuestionStartedAt = _dateProvider.Now;
 
             var answers = question.Answers.OrderBy(a => Guid.NewGuid()).ToList();
@@ -255,67 +252,12 @@ namespace UltimateTrivia.Application.Game
                     }).ToList()
                 }, cancellationToken: ct);
             
-            await MoveNext(EGameStateTransition.WaitForAnswers, ct);
+            await MoveNext(EGameCommand.WaitForAnswers, ct);
         }
         
-        private async Task CollectingAnswerEnter(object data, CancellationToken ct)
+        private async Task WaitingForAnswersTimeout(object data, CancellationToken ct)
         {
-            var players = _playerManager.GetPlayerInLobby(_configuration.LobbyId);
-
-            if (players.Count == 0)
-            {
-                await MoveNext(StateMachineBaseCommand.Done, ct);
-                return;
-            }
-            _gameState.Players = players;
-            
-            if (!(data is AnswerSelectedEvent answerCollectedEvent))
-            {
-                throw new ApplicationException($"unexpected data received {data.GetType()}");
-            }
-
-            if (_gameState.CurrentPlayerAnswers.Any(a => a.Player.Id == answerCollectedEvent.Player.Id))
-            {
-                Logger.LogInformation($"player {answerCollectedEvent.Player.Id} already answered");
-                return;
-            }
-
-            var selectedAnswer = _gameState.CurrentAnswers.FirstOrDefault(a => a.Id == answerCollectedEvent.AnswerId);
-
-            if (selectedAnswer == null)
-            {
-                throw new ApplicationException($"Answer {answerCollectedEvent.AnswerId} doesnt exist");
-            }
-            
-            _gameState.CurrentPlayerAnswers.Add(new GameState.PlayerAnswer
-            {
-                Answer = selectedAnswer,
-                Player = answerCollectedEvent.Player,
-                AnswerGivenAt = _dateProvider.Now
-            });
-            
-
-            Logger.LogDebug("{username} selected answer {answer}", answerCollectedEvent.Player.Id, answerCollectedEvent.AnswerId);
-
-            var remainingPlayers = _gameState.Players
-                .Where(player => _gameState.CurrentPlayerAnswers.All(p => player.Data.Id != p.Player.Id))
-                .Select(u => u.Data).ToList();
-            
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.PlayerAnswered,
-                new PlayerAnsweredEvent
-                {
-                    Player = answerCollectedEvent.Player,
-                    RemainingPlayers = remainingPlayers
-                }, cancellationToken: ct);
-                
-            if (remainingPlayers.Any())
-            {
-                await MoveNext(EGameStateTransition.WaitForAnswers, ct);
-            }
-            else
-            {
-                await MoveNext(EGameStateTransition.HighlightCorrectAnswer, ct);
-            }
+            await MoveNext(EGameCommand.HighlightCorrectAnswer, ct);
         }
         
         private async Task HighlightingCorrectAnswerEnter(object data, CancellationToken ct)
@@ -337,7 +279,7 @@ namespace UltimateTrivia.Application.Game
 
             await Task.Delay(5000, ct);
             
-            await MoveNext(EGameStateTransition.CalculatePoints, ct);
+            await MoveNext(EGameCommand.CalculatePoints, ct);
         }
         
         private async Task CalculatingPointsEnter(object data, CancellationToken ct)
@@ -367,7 +309,7 @@ namespace UltimateTrivia.Application.Game
                     Points = _gameState.Points
                 }, cancellationToken: ct);
 
-            await MoveNext(EGameStateTransition.StartNewRound, ct);
+            await MoveNext(EGameCommand.StartNewRound, ct);
         }
         
         private async Task ShowingFinalResultEnter(object data, CancellationToken ct)
@@ -378,7 +320,159 @@ namespace UltimateTrivia.Application.Game
                     Points = _gameState.Points
                 }, cancellationToken: ct);
 
-            await MoveNext(StateMachineBaseCommand.Done, ct);
+            await MoveNext(StateMachineBaseTransition.Done, ct);
         }
+        
+        #endregion
+
+        
+        
+        
+        
+        
+        #region Events
+
+        private async Task HandleCategorySelected(object data, CancellationToken ct)
+        {
+            if (!(data is CategorySelectedData categorySelectedData))
+            {
+                throw new ApplicationException($"unexpected data received {data.GetType()}");
+            }
+            
+            if (categorySelectedData.Player.Id != _gameState.CurrentPlayer.Id)
+            {
+                Logger.LogWarning("{playerId} tried to select a category, but it is {currentPlayer}´s turn", categorySelectedData.Player.Id, _gameState.CurrentPlayer);
+            }
+            else
+            {
+                Logger.LogDebug("{playerId} selected category {category}", categorySelectedData.Player.Id, categorySelectedData.Category);
+                _gameState.CurrentCategory = categorySelectedData.Category;
+                    
+                await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
+                    new CategorySelectedEvent
+                    {
+                        Category = categorySelectedData.Category,
+                        Player = categorySelectedData.Player
+                    }, cancellationToken: ct);
+                    
+                await MoveNext(EGameCommand.ShowQuestion, ct);
+            }
+        }
+        private async Task HandleAnswerSelected(object data, CancellationToken ct)
+        {
+            if (!(data is AnswerSelectedData answerSelectedData))
+            {
+                throw new ApplicationException($"unexpected data received {data.GetType()}");
+            }
+
+            if (_gameState.CurrentPlayerAnswers.Any(a => a.Player.Id == answerSelectedData.Player.Id))
+            {
+                Logger.LogInformation($"player {answerSelectedData.Player.Id} already answered");
+                return;
+            }
+
+            var selectedAnswer = _gameState.CurrentAnswers.FirstOrDefault(a => a.Id == answerSelectedData.AnswerId);
+
+            if (selectedAnswer == null)
+            {
+                throw new ApplicationException($"Answer {answerSelectedData.AnswerId} doesnt exist");
+            }
+            
+            _gameState.CurrentPlayerAnswers.Add(new GameState.PlayerAnswer
+            {
+                Answer = selectedAnswer,
+                Player = answerSelectedData.Player,
+                AnswerGivenAt = _dateProvider.Now
+            });
+
+            Logger.LogDebug("{playerId} ({playerName}) selected answer {answer}", answerSelectedData.Player.Id, answerSelectedData.Player.Name, answerSelectedData.AnswerId);
+
+            var remainingPlayers = _gameState.Players
+                .Where(player => _gameState.CurrentPlayerAnswers.All(p => player.Data.Id != p.Player.Id))
+                .Select(u => u.Data).ToList();
+            
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.PlayerAnswered,
+                new AnswerSelectedEvent
+                {
+                    Player = answerSelectedData.Player,
+                    RemainingPlayers = remainingPlayers
+                }, cancellationToken: ct);
+                
+            if (!remainingPlayers.Any())
+            {
+                await MoveNext(EGameCommand.HighlightCorrectAnswer, ct);
+            }
+        }
+        
+        private async Task HandleUserJoined(object data, CancellationToken ct)
+        {
+            LoadPlayers();
+            
+            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.GameStarted, new GameStartedEvent
+            {
+                CurrentRoundNr = _gameState.CurrentRoundNr,
+                CurrentQuestionNr = _gameState.CurrentQuestionNr,
+                CurrentCategory = _gameState.CurrentCategory,
+                CurrentQuestion = _gameState.CurrentQuestion,
+                CurrentAnswers = _gameState.CurrentAnswers.Select(a => new Answer
+                {
+                    Content = a.Content,
+                    Id = a.Id
+                }).ToList(),
+                CurrentPlayer = _gameState.CurrentPlayer,
+                Points = _gameState.Points
+            }, cancellationToken: ct);
+        }
+        
+        private async Task HandleUserLeft(object data, CancellationToken ct)
+        {
+            LoadPlayers();
+            
+            if (_gameState.Players.Count == 0)
+            {
+                Cancel("no more users in game");
+            }
+
+            if (Equals(CurrentState.Name, EGameState.WaitingForCategory))
+            {
+                Logger.LogInformation("selecting user left. use random category");
+
+                _gameState.CurrentCategory = _gameState.Categories.First();
+                    
+                await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
+                    new CategorySelectedEvent
+                    {
+                        Category = _gameState.CurrentCategory,
+                        Player = _gameState.CurrentPlayer
+                    }, cancellationToken: ct);
+                    
+                await MoveNext(EGameCommand.ShowQuestion, ct);
+            }
+            else if(Equals(CurrentState.Name, EGameState.WaitingForAnswers))
+            {
+                var remainingPlayers = _gameState.Players
+                    .Where(player => _gameState.CurrentPlayerAnswers.All(p => player.Data.Id != p.Player.Id))
+                    .Select(u => u.Data).ToList();
+                
+                if (!remainingPlayers.Any())
+                {
+                    await MoveNext(EGameCommand.HighlightCorrectAnswer, ct);
+                }
+            }
+        }
+
+        #endregion
+
+
+        #region Utils
+
+        private void LoadPlayers()
+        {
+            var players = _playerManager.GetPlayerInLobby(_configuration.LobbyId).OrderBy(u => u.Data.Id).ToList();
+            _gameState.Players = players;
+        }
+
+        #endregion
+        
     }
 }

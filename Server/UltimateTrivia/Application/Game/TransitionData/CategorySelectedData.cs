@@ -1,8 +1,8 @@
 ﻿namespace UltimateTrivia.Application.Game.TransitionData
 {
-    public class CategorySelectedEvent
+    public class CategorySelectedData
     {
         public string Category { get; set; }
-        public PlayerData CurrentPlayer { get; set; }
+        public PlayerData Player { get; set; }
     }
 }

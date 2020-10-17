@@ -56,6 +56,19 @@ PlayerLeftEvent {
 	PlayerData[] players
 }
 
+GameStartedEvent {
+	int currentRoundNr
+	int currentQuestionNr
+	Dictionary<string, int> Points
+	
+	// only filled when joining a running game
+	PlayerData CurrentPlayer
+	string currentCategory
+	string currentQuestion
+	Answer[] CurrentAnswers
+}
+
+
 ShowCategoriesEvent {
 	string[] categories
 	PlayerData currentPlayer
@@ -93,7 +106,7 @@ userJoinedLobby(PlayerJoinedEvent)
 joinLobby(JoinLobbyEvent)
 userLeftLobby(PlayerLeftEvent)
 leaveLobby()
-gameStarted()
+gameStarted(GameStartedEvent)
 showCategories(ShowCategoriesEvent)
 categorySelected(CategorySelectedEvent)	// changed from categoryChoosen
 showQuestion(ShowQuestionEvent)
@@ -114,6 +127,8 @@ SendMessage
 JoinLobby
     -> [Lobby] userJoinedLobby 
     -> [Caller]  joinLobby 
+	if GameIsRunning 
+		-> [Caller] gameStarted
 
 CreateLobby
   ->  [Caller]  joinLobby 
@@ -121,8 +136,7 @@ CreateLobby
 LeaveLobby
    -> [Lobby] userLeftLobby 
    -> [Caller] leaveLobby 
-
-
+   
 
 startGame
 	-> [Lobby] gameStarted
@@ -135,13 +149,11 @@ categorySelected
 
 answerSelected
 	-> [Lobby] playerAnswered
-	
-	--- All Players answered ---
-	-> [Lobby] highlightCorrectAnswer
-	-> [Lobby] updatePoints
-	
-	--- Last Round ---
-	-> showFinalResult
+	if All Players answered 
+		-> [Lobby] highlightCorrectAnswer
+		-> [Lobby] updatePoints
+	if last round
+		-> showFinalResult
 
 
 

@@ -13,17 +13,29 @@ namespace StateMachine
     public abstract class StateMachineBase : IDisposable
         
     {
-        private struct TransitionCommand
-         
+        private struct StateMachineCommand
         {
+            public enum StateMachineCommandType
+            {
+                Timout,
+                Transition,
+                Event
+            }
+            
+            public StateMachineCommandType CommandType { get; }
             public Enum Command { get; }
             public object Data { get; }
 
-            public TransitionCommand(Enum command, object data = null)
+            public StateMachineCommand(StateMachineCommandType commandType, Enum command, object data = null)
             {
+                CommandType = commandType;
                 Command = command;
                 Data = data;
             }
+            
+            public static StateMachineCommand Transition(Enum command, object data = null) => new StateMachineCommand(StateMachineCommandType.Transition, command, data);
+            public static StateMachineCommand Event(Enum command, object data = null) => new StateMachineCommand(StateMachineCommandType.Event, command, data);
+            public static StateMachineCommand Timeout(object data) => new StateMachineCommand(StateMachineCommandType.Timout, null, data);
         }
 
         protected readonly ILogger Logger;
@@ -32,15 +44,17 @@ namespace StateMachine
         protected State LastState { get; private set; }
         protected State CurrentState { get; private set; }
         private readonly List<State> _states = new List<State>();
+        private readonly List<Event> _events = new List<Event>();
 
         private readonly Timer _timeoutTimer;
+        private Enum TimeoutState;
 
         private readonly CancellationTokenSource _commandHandlerCts = new CancellationTokenSource();
         private readonly Task _commandHandler;
         
         private CancellationTokenSource _transitionCts = new CancellationTokenSource();
         
-        private readonly BlockingCollection<TransitionCommand> _commandQueue = new BlockingCollection<TransitionCommand>();
+        private readonly BlockingCollection<StateMachineCommand> _commandQueue = new BlockingCollection<StateMachineCommand>();
         private readonly object _commandEnqueueLock = new object();
         private readonly object _commandDequeueLock = new object();
 
@@ -48,7 +62,7 @@ namespace StateMachine
         {
             Logger = logger;
             
-            AddStates();
+            Configure();
     
             CurrentState = _states.First(s => Equals(StateMachineBaseState.Idle, s.Name));
 
@@ -58,10 +72,10 @@ namespace StateMachine
             {
                 AutoReset = false
             };
-            _timeoutTimer.Elapsed += (sender, e) => Cancel("timeout exceeded");
+            _timeoutTimer.Elapsed += (sender, e) => EnqueueTimeout();
         }
 
-        protected virtual void AddStates()
+        protected virtual void Configure()
         {
             AddState(StateMachineBaseState.Idle)
                 .OnEnter(OnIdleEnter)
@@ -69,7 +83,7 @@ namespace StateMachine
             AddState(StateMachineBaseState.Canceled)
                 .OnEnter(OnCancelEnter)
                 .OnExit(OnCancelExit)
-                .On(StateMachineBaseCommand.Done)
+                .On(StateMachineBaseTransition.Done)
                 .Goto(StateMachineBaseState.Idle);
         }
 
@@ -79,12 +93,26 @@ namespace StateMachine
             {
                 try
                 {
-                    TransitionCommand cmd;
+                    StateMachineCommand cmd;
                     lock (_commandDequeueLock)
                     {
                         cmd = _commandQueue.Take(_transitionCts.Token);
                     }
-                    await MoveNext(cmd.Command, _transitionCts.Token, cmd.Data);
+
+                    switch (cmd.CommandType)
+                    {
+                        case StateMachineCommand.StateMachineCommandType.Transition:
+                            await MoveNext(cmd.Command, _transitionCts.Token, cmd.Data);
+                            break;
+                        case StateMachineCommand.StateMachineCommandType.Event:
+                            await HandleEvent(cmd.Command, _transitionCts.Token, cmd.Data);
+                            break;
+                        case StateMachineCommand.StateMachineCommandType.Timout:
+                            await HandleTimeout(_transitionCts.Token, cmd.Data);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                 }
                 catch(OperationCanceledException e)
                 {
@@ -98,27 +126,69 @@ namespace StateMachine
             }
         }
 
-        public void EnqueueTransition(Enum command, object data = null)
+        public void EnqueueTransition(Enum transition, object data = null)
         {
-            if (Equals(command, StateMachineBaseCommand.Cancel))
+            if (Equals(transition, StateMachineBaseTransition.Cancel))
                 throw new NotSupportedException("use \"StateMachine.Cancel()\" instead of enqueueing a cancel transition");
 
             lock (_commandEnqueueLock)
             {
-                _commandQueue.Add(new TransitionCommand(command, data));
+                _commandQueue.Add(StateMachineCommand.Transition(transition, data));
+            }
+        }
+        
+        public void EnqueueEvent(Enum evt, object data = null)
+        {
+            lock (_commandEnqueueLock)
+            {
+                _commandQueue.Add(StateMachineCommand.Event(evt, data));
+            }
+        }
+        
+        public void EnqueueTimeout(object data = null)
+        {
+            lock (_commandEnqueueLock)
+            {
+                _commandQueue.Add(StateMachineCommand.Timeout(data));
             }
         }
 
+        protected async Task HandleEvent(Enum evt, CancellationToken cancellationToken, object data = null)
+        {
+            
+        }
+        
+        protected async Task HandleTimeout(CancellationToken cancellationToken, object data = null)
+        {
+            if (CurrentState.Name != TimeoutState)
+            {
+                // prevent racecondition. timeout exceeded, but state already changed at the same time
+                return;
+            }
+
+            if (CurrentState.TimeoutDuration.TotalMilliseconds > 0)
+            {
+                await CurrentState.Timeout(data, cancellationToken);
+            }
+            else
+            {
+                Cancel("timeout exceeded");
+            }
+        }
+        
         protected async Task MoveNext(Enum command, CancellationToken cancellationToken, object data = null)
         {
             try
             {
                 var transition = CurrentState.Transitions.FirstOrDefault(trans => Equals(trans.Command, command));
-                if (transition == null) 
-                    throw new ArgumentNullException($"{nameof(transition)}  --> transition: {command} from State: {CurrentState.Name} was not registered");
+                if (transition == null)
+                {
+                    Logger.LogError($"{nameof(transition)}  --> transition: {command} from State: {CurrentState.Name} was not registered");
+                    return;
+                }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                if(!Equals(command, StateMachineBaseCommand.Cancel))
+                if(!Equals(command, StateMachineBaseTransition.Cancel))
                     await CurrentState.Exit(data, cancellationToken);
 
                 _timeoutTimer.Stop();
@@ -144,10 +214,11 @@ namespace StateMachine
             
             void StartTimeoutTimer()
             {
-                if (CurrentState.Timeout <= 0)
+                if (CurrentState.TimeoutDuration.TotalMilliseconds <= 0)
                     return;
 
-                _timeoutTimer.Interval = CurrentState.Timeout;
+                TimeoutState = CurrentState.Name;
+                _timeoutTimer.Interval = CurrentState.TimeoutDuration.TotalMilliseconds;
                 _timeoutTimer.Start();
             }
         }
@@ -162,7 +233,7 @@ namespace StateMachine
                 while (_commandQueue.Count > 0)
                     _commandQueue.Take();
 
-                _commandQueue.Add(new TransitionCommand(StateMachineBaseCommand.Cancel));
+                _commandQueue.Add(StateMachineCommand.Transition(StateMachineBaseTransition.Cancel));
 
                 _transitionCts = new CancellationTokenSource();
             }
@@ -176,11 +247,18 @@ namespace StateMachine
                 throw new Exception($"\"{name}\" is already defined in {nameof(StateMachineBaseState)}!");
 
             var state = new State(name)
-                .On(StateMachineBaseCommand.Cancel)
+                .On(StateMachineBaseTransition.Cancel)
                 .Goto(StateMachineBaseState.Canceled);
             
             _states.Add(state);
             return state;
+        }
+        
+        protected Event AddEvent(Enum name)
+        {
+            var evt = new Event(name);
+            _events.Add(evt);
+            return evt;
         }
 
         protected State GetState(Enum name)
@@ -202,7 +280,7 @@ namespace StateMachine
 
         protected virtual async Task OnCancelEnter(object data, CancellationToken cancellationToken)
         {
-            await MoveNext(StateMachineBaseCommand.Done, cancellationToken);
+            await MoveNext(StateMachineBaseTransition.Done, cancellationToken);
         }
 
         protected virtual Task OnCancelExit(object data, CancellationToken cancellationToken)

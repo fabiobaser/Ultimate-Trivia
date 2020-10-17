@@ -23,12 +23,13 @@ namespace UltimateTrivia.Application.Game
             }
             
             public int MaxRounds { get; set; }
-            public int AnswerDuration { get; set; }
             public int CurrentRoundNr { get; set; }
-            public int CurrentQuestionNr { get; set; }
-            public string CurrentCategory { get; set; }
             public PlayerData CurrentPlayer { get; set; }
+
             
+            public List<string> Categories { get; set; }
+            public string CurrentCategory { get; set; }
+            public int CurrentQuestionNr { get; set; }
             public string CurrentQuestion { get; set; }
             public List<PlayerAnswer> CurrentPlayerAnswers { get; set; } = new List<PlayerAnswer>();
             public DateTimeOffset? CurrentQuestionStartedAt { get; set; }
@@ -43,13 +44,26 @@ namespace UltimateTrivia.Application.Game
             public void NextRound()
             {
                 CurrentRoundNr++;
-                CurrentQuestionNr = 1;
                 
+                Categories = new List<string>();
+                CurrentCategory = null;
+                CurrentQuestionNr = 1;
+                CurrentQuestion = null;
+                CurrentPlayerAnswers = new List<PlayerAnswer>();
+                CurrentQuestionStartedAt = null;
+                CurrentAnswers = new List<Answer>();
             }
 
             public void NextQuestion()
             {
+                CurrentQuestionNr++;
                 
+                Categories = new List<string>();
+                CurrentCategory = null;
+                CurrentQuestion = null;
+                CurrentPlayerAnswers = new List<PlayerAnswer>();
+                CurrentQuestionStartedAt = null;
+                CurrentAnswers = new List<Answer>();
             }
         }
     }
