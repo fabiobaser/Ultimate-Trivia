@@ -124,7 +124,7 @@ namespace UltimateTrivia
                         AllowedScopes = new List<string>() {"UltimateTriviaAPI"},
                         ClientId = "Swagger",
                         ClientName = "Swagger",
-                        RedirectUris = new List<string>() {"https://localhost:5001/swagger/oauth2-redirect.html", "https://marceljenner.com:5001/swagger/oauth2-redirect.html"},
+                        RedirectUris = new List<string>() {"https://localhost:5001/swagger/oauth2-redirect.html", "https://quiz.fabiobaser.de:5001/swagger/oauth2-redirect.html"},
                         AllowedGrantTypes = GrantTypes.Code,
                         RequireClientSecret = false,
                         RequirePkce = true,
@@ -137,9 +137,9 @@ namespace UltimateTrivia
                         options.WithScopes("openid", "profile", "email", "UltimateTriviaAPI")
                             .WithoutClientSecrets()
                             .WithRedirectUri("https://localhost:1234/signin-oidc")
-                            .WithRedirectUri("https://marceljenner.com:1234/signin-oidc")
+                            .WithRedirectUri("https://quiz.fabiobaser.de/signin-oidc")
                             .WithLogoutRedirectUri("https://localhost:1234/signout-oidc")
-                            .WithLogoutRedirectUri("https://marceljenner.com:1234/signout-oidc");
+                            .WithLogoutRedirectUri("https://quiz.fabiobaser.de/signout-oidc");
                     });
                     
                     // options.Clients["ultimate-trivia-client"].Claims.Add(ClaimTypes.NameIdentifier);

@@ -58,8 +58,8 @@ namespace UltimateTrivia.OpenApi
                 {
                     AuthorizationCode = new OpenApiOAuthFlow
                     {
-                        AuthorizationUrl = new Uri("https://marceljenner.com:5001/connect/authorize"),
-                        TokenUrl = new Uri("https://marceljenner.com:5001/connect/token"),
+                        AuthorizationUrl = new Uri("https://quiz.fabiobaser.de:5001/connect/authorize"),
+                        TokenUrl = new Uri("https://quiz.fabiobaser.de:5001/connect/token"),
                         Scopes = new Dictionary<string, string>
                         {
                             ["UltimateTriviaAPI"] = "Ultimate Trivia Api"
