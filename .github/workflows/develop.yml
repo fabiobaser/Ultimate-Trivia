@@ -1,0 +1,27 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the develop branch
+on:
+  push:
+    paths:
+      - 'Server/**'
+    branches: [ develop ]
+
+jobs:
+  build_and_deploy_server:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build container
+        run: docker build ./Server
+
+      - name: run container
+        run: |
+          echo docker stop ultimate-trivia,
+          echo docker rm ultimate-trivia,
+          echo run -d -p 5000:5000 -p 5001:5001 --name=ultimate-trivia ultimatetrivia.
