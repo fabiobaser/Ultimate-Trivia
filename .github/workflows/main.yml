@@ -18,10 +18,10 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Build container
-        run: sudo docker build ./Server
+        run: docker build ./Server
 
       - name: run container
         run: |
-          echo sudo docker stop ultimate-trivia,
-          echo sudo docker rm ultimate-trivia,
-          echo sudo run -d -p 5000:5000 -p 5001:5001 --name=ultimate-trivia ultimatetrivia.
+          echo docker stop ultimate-trivia,
+          echo docker rm ultimate-trivia,
+          echo run -d -p 5000:5000 -p 5001:5001 --name=ultimate-trivia ultimatetrivia.
