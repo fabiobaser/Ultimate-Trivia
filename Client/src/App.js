@@ -34,6 +34,7 @@ export default class App extends Component {
             points: {},
             results: [],
         }
+        
     }
 
     componentDidMount() {
