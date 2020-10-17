@@ -119,6 +119,7 @@ namespace UltimateTrivia.Application
             {
                 _gameManager.PassEventToGame(lobby.GameId, Game.Game.EGameEvent.PlayerJoined, new PlayerJoinedData
                 {
+                    ConnectionId = connectionId,
                     Player = playerData
                 });
             }
@@ -135,6 +136,15 @@ namespace UltimateTrivia.Application
             var leftLobbyId = player.LobbyId;
             _playerManager.LeaveLobby(connectionId);
             
+            var lobby = Lobbies[player.LobbyId];
+            if (lobby.GameId != null && _gameManager.IsGameInProgress(lobby.GameId))
+            {
+                _gameManager.PassEventToGame(lobby.GameId, Game.Game.EGameEvent.PlayerLeft, new PlayerLeftData
+                {
+                    LeavingPlayer = player.Data
+                });
+            }
+            
             var playerInLobby = _playerManager.GetPlayerInLobby(leftLobbyId);
             
             await _hubContext.Clients.Group(leftLobbyId).SendAsync(RpcFunctionNames.UserLeftLobby, new PlayerLeftEvent
@@ -144,16 +154,6 @@ namespace UltimateTrivia.Application
             });
             
             await _hubContext.Clients.Client(connectionId).SendAsync(RpcFunctionNames.LeaveLobby);
-            
-            var lobby = Lobbies[player.LobbyId];
-            if (lobby.GameId != null && _gameManager.IsGameInProgress(lobby.GameId))
-            {
-                _gameManager.PassEventToGame(lobby.GameId, Game.Game.EGameEvent.PlayerLeft, new PlayerLeftData
-                {
-                   LeavingPlayer = player.Data
-                });
-            }
-            
         }
 
         public async Task StartGameAsync(string connectionId, StartGameEvent startGameEvent)

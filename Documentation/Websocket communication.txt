@@ -68,6 +68,9 @@ GameStartedEvent {
 	Answer[] CurrentAnswers
 }
 
+NextRoundStartedEvent {
+    int roundNr
+}
 
 ShowCategoriesEvent {
 	string[] categories
@@ -108,10 +111,11 @@ joinLobby(JoinLobbyEvent)
 userLeftLobby(PlayerLeftEvent)
 leaveLobby()
 gameStarted(GameStartedEvent)
+nextRoundStarted(NextRoundStartedEvent)
 showCategories(ShowCategoriesEvent)
-categorySelected(CategorySelectedEvent)	// changed from categoryChoosen
+categorySelected(CategorySelectedEvent)
 showQuestion(ShowQuestionEvent)
-playerAnswered(PlayerAnsweredEvent)   	// changed from userAnswered
+playerAnswered(PlayerAnsweredEvent)
 highlightCorrectAnswer(HighlightCorrectAnswerEvent)
 updatePoints(UpdatePointsEvent)
 showFinalResult(ShowFinalResult)
@@ -142,7 +146,7 @@ LeaveLobby
 startGame
 	-> [Lobby] gameStarted
 	-> [Lobby] showCategories
-
+    -> [Lobby] nextRoundStarted
 
 categorySelected
 	-> [Lobby] categorySelected

@@ -8,6 +8,7 @@
         public const string UserJoinedLobby = "userJoinedLobby";
         public const string UserLeftLobby = "userLeftLobby";
         public const string GameStarted = "gameStarted";
+        public const string NextRoundStarted = "nextRoundStarted";
         public const string ShowCategories = "showCategories";
         public const string ShowQuestion = "showQuestion";
         public const string CategorySelected = "categorySelected";

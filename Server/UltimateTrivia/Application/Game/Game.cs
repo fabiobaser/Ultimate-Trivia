@@ -170,13 +170,14 @@ namespace UltimateTrivia.Application.Game
                 _gameState.NextRound();
                 next = _gameState.Players.First();
                 
-                // TODO: send event for newRound?
+                await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.NextRoundStarted, new NextRoundStartedEvent
+                {
+                  RoundNr = _gameState.CurrentRoundNr
+                }, ct);
             }
             else
             {
                 _gameState.NextQuestion();
-                
-                // TODO: send event for nextQuestion Round?
             }
 
             if (_gameState.CurrentRoundNr > _gameState.MaxRounds)
@@ -408,8 +409,13 @@ namespace UltimateTrivia.Application.Game
         private async Task HandleUserJoined(object data, CancellationToken ct)
         {
             LoadPlayers();
+
+            if (!(data is PlayerJoinedData playerJoinedData))
+            {
+                throw new ApplicationException($"unexpected data received {data.GetType()}");
+            }
             
-            await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.GameStarted, new GameStartedEvent
+            await _hubContext.Clients.Client(playerJoinedData.ConnectionId).SendAsync(RpcFunctionNames.GameStarted, new GameStartedEvent
             {
                 CurrentRoundNr = _gameState.CurrentRoundNr,
                 CurrentQuestionNr = _gameState.CurrentQuestionNr,
@@ -433,31 +439,41 @@ namespace UltimateTrivia.Application.Game
             {
                 Cancel("no more users in game");
             }
-
-            if (Equals(CurrentState.Name, EGameState.WaitingForCategory))
+            
+            if (!(data is PlayerLeftData playerLeftData))
             {
-                Logger.LogInformation("selecting user left. use random category");
-
-                _gameState.CurrentCategory = _gameState.Categories.First();
-                    
-                await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
-                    new CategorySelectedEvent
-                    {
-                        Category = _gameState.CurrentCategory,
-                        Player = _gameState.CurrentPlayer
-                    }, cancellationToken: ct);
-                    
-                await MoveNext(EGameCommand.ShowQuestion, ct);
+                throw new ApplicationException($"unexpected data received {data.GetType()}");
             }
-            else if(Equals(CurrentState.Name, EGameState.WaitingForAnswers))
+
+            switch (CurrentState.Name)
             {
-                var remainingPlayers = _gameState.Players
-                    .Where(player => _gameState.CurrentPlayerAnswers.All(p => player.Data.Id != p.Player.Id))
-                    .Select(u => u.Data).ToList();
-                
-                if (!remainingPlayers.Any())
+                case EGameState.WaitingForCategory when playerLeftData.LeavingPlayer.Id == _gameState.CurrentPlayer.Id:
+                    
+                    Logger.LogInformation("selecting user left. use random category");
+
+                    _gameState.CurrentCategory = _gameState.Categories.First();
+                    
+                    await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
+                        new CategorySelectedEvent
+                        {
+                            Category = _gameState.CurrentCategory,
+                            Player = _gameState.CurrentPlayer
+                        }, cancellationToken: ct);
+                    
+                    await MoveNext(EGameCommand.ShowQuestion, ct);
+                    break;
+                case EGameState.WaitingForAnswers:
                 {
-                    await MoveNext(EGameCommand.HighlightCorrectAnswer, ct);
+                    var remainingPlayers = _gameState.Players
+                        .Where(player => _gameState.CurrentPlayerAnswers.All(p => player.Data.Id != p.Player.Id))
+                        .Select(u => u.Data).ToList();
+                
+                    if (!remainingPlayers.Any())
+                    {
+                        await MoveNext(EGameCommand.HighlightCorrectAnswer, ct);
+                    }
+
+                    break;
                 }
             }
         }
