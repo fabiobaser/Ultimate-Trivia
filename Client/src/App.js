@@ -33,8 +33,7 @@ export default class App extends Component {
             question: '',
             points: {},
             results: [],
-        }
-        
+        }        
     }
 
     componentDidMount() {
