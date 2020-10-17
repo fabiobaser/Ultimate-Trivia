@@ -87,6 +87,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Folder Include="Certificate\DE_fabiobaser" />
         <Folder Include="Database\Identity\Entities" />
     </ItemGroup>    
     
