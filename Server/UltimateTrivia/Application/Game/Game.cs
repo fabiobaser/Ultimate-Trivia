@@ -245,6 +245,7 @@ namespace UltimateTrivia.Application.Game
                 new ShowQuestionEvent
                 {
                     Question = question.Content,
+                    QuestionNr = _gameState.CurrentQuestionNr,
                     Answers = answers.Select(a => new Answer
                     {
                         Content = a.Content,

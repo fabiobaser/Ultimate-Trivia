@@ -81,6 +81,7 @@ CategorySelectedEvent {
 
 ShowQuestionEvent {
 	string question
+	int questionNr
 	Answer[] answers
 }
 
