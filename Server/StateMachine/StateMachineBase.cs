@@ -155,18 +155,27 @@ namespace StateMachine
 
         protected async Task HandleEvent(Enum evt, CancellationToken cancellationToken, object data = null)
         {
+            var @event = _events.FirstOrDefault(e => Equals(e.Name, evt));
+
+            if (@event == null)
+            {
+                Logger.LogError("event {eventName} is not defined", evt);
+                return;
+            }
             
+            await @event.Execute(data, cancellationToken);
+
         }
         
         protected async Task HandleTimeout(CancellationToken cancellationToken, object data = null)
         {
-            if (CurrentState.Name != TimeoutState)
+            if (!Equals(CurrentState.Name, TimeoutState))
             {
                 // prevent racecondition. timeout exceeded, but state already changed at the same time
                 return;
             }
 
-            if (CurrentState.TimeoutDuration.TotalMilliseconds > 0)
+            if (CurrentState.HasCustomerTimeoutHandler)
             {
                 await CurrentState.Timeout(data, cancellationToken);
             }

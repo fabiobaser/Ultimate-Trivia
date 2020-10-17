@@ -138,7 +138,10 @@ export default class App extends Component {
       this.setState({ inGame: true });
     });
 
-    this.connection.on("categoryChoosen", ({ username, category }) => {
+    this.connection.on("nextRoundStarted", (nextRoundStartedEvent) => {
+    });
+
+    this.connection.on("categorySelected", ({ username, category }) => {
       this.pushtToChat("", `${username} hat "${category}" ausgewählt`);
     });
 
@@ -172,7 +175,7 @@ export default class App extends Component {
     });
 
     // TODO: handle correctly
-    this.connection.on("userAnswered", (userAnsweredEvent) => {
+    this.connection.on("playerAnswered", (userAnsweredEvent) => {
       console.log(`${userAnsweredEvent.username} has answered`);
     });
 

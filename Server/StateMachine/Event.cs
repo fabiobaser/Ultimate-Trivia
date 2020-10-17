@@ -21,5 +21,10 @@ namespace StateMachine
             OnEvent = eventHandler;
             return this;
         }
+
+        public async Task Execute(object data, CancellationToken ct)
+        {
+            if (OnEvent != null) await OnEvent(data, ct);
+        }
     }
 }

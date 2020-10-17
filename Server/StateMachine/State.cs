@@ -11,12 +11,14 @@ namespace StateMachine
         public delegate Task StateEventHandler(object data, CancellationToken ct);
         
         public Enum Name { get; }
+        public List<Transition> Transitions = new List<Transition>();
+        public TimeSpan TimeoutDuration { get; private set; }
+        public bool HasCustomerTimeoutHandler => OnStateTimeout != null;
+        
         private StateEventHandler OnStateEnter;
         private StateEventHandler OnStateExit;
         private StateEventHandler OnStateTimeout;
-        public List<Transition> Transitions = new List<Transition>();
-        public TimeSpan TimeoutDuration { get; private set; }
-
+        
         public State(Enum name)
         {
             Name = name;
