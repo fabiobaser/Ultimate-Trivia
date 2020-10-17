@@ -163,6 +163,7 @@ namespace UltimateTrivia
                     options.CorrelationCookie.SameSite = SameSiteMode.None;
                 });
             
+            
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
