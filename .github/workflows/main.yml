@@ -20,8 +20,13 @@ jobs:
       - name: Build container
         run: docker build -t ultimate-trivia ./Server
 
-      - name: run container
-        run: |
-          docker stop ultimate-trivia,
-          docker rm ultimate-trivia,
-          docker run -d -p 5000:5000 -p 5001:5001 --name=ultimate-trivia ultimate-trivia .
+      - name: stop container
+        continue-on-error: true
+        run:  docker stop ultimate-trivia
+        
+      - name: remove container
+        continue-on-error: true
+        run:  docker rm ultimate-trivia
+        
+      - name: run container        
+        run:  docker run -d -p 5000:5000 -p 5001:5001 --name=ultimate-trivia ultimate-trivia .
