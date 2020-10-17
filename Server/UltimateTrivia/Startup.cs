@@ -75,12 +75,12 @@ namespace UltimateTrivia
                             .WithOrigins(
                                 "http://localhost:1234", 
                                 "https://localhost:1234", 
-                                "http://marceljenner.com:1234",
-                                "https://marceljenner.com:1234",
+                                "http://quiz.fabiobaser.de",
+                                "https://quiz.fabiobaser.de",
                                 "http://localhost:5000", 
                                 "https://localhost:5001",
-                                "http://marceljenner.com:5000",
-                                "https://marceljenner.com:5001")
+                                "http://quiz.fabiobaser.de:5000",
+                                "https://quiz.fabiobaser.de:5001")
                             .AllowAnyHeader()
                             .AllowAnyMethod()
                             .AllowCredentials()));
