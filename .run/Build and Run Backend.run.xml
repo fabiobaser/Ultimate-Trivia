@@ -7,6 +7,14 @@
         <option name="command" value="" />
         <option name="containerName" value="ultimate-trivia" />
         <option name="entrypoint" value="" />
+        <option name="envVars">
+          <list>
+            <DockerEnvVarImpl>
+              <option name="name" value="ASPNETCORE_ENVIRONMENT" />
+              <option name="value" value="Development" />
+            </DockerEnvVarImpl>
+          </list>
+        </option>
         <option name="portBindings">
           <list>
             <DockerPortBindingImpl>
