@@ -24,4 +24,4 @@ jobs:
         run: |
           echo docker stop ultimate-trivia,
           echo docker rm ultimate-trivia,
-          echo run -d -p 5000:5000 -p 5001:5001 --name=ultimate-trivia ultimatetrivia.
+          echo docker run -d -p 5000:5000 -p 5001:5001 --name=ultimate-trivia ultimatetrivia.
