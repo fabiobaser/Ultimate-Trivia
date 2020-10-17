@@ -250,7 +250,7 @@ export default class App extends Component {
         loadUserFromStorage(store).then(user => {
             console.log(user)
 
-            fetch('https://marceljenner.com:5001/debug', {
+            fetch('https://quiz.fabiobaser.de:5001/debug', {
                 headers: {
                     Authorization: 'Bearer ' + user.access_token,
                 },
