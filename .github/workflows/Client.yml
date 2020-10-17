@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Build container
-        run: docker build -t ultimate-trivia-client ./client
+        run: docker build -t ultimate-trivia-client ./Client
 
       - name: stop container
         continue-on-error: true
