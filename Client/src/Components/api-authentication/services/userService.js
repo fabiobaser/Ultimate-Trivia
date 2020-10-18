@@ -10,23 +10,23 @@ import { storeUserError, storeUser } from '../actions/authActions'
   post_logout_redirect_uri: "https://localhost:1234/signout-oidc",
 };*/
 
+// const config = {
+//     authority: 'https://quiz.fabiobaser.de:5001',
+//     client_id: 'ultimate-trivia-client',
+//     redirect_uri: 'https://localhost:1234/signin-oidc',
+//     response_type: 'code',
+//     scope: 'openid profile UltimateTriviaAPI',
+//     post_logout_redirect_uri: 'https://quiz.fabiobaser.de/signout-oidc',
+// }
+
 const config = {
     authority: 'https://quiz.fabiobaser.de:5001',
     client_id: 'ultimate-trivia-client',
-    redirect_uri: 'https://localhost:1234/signin-oidc',
+    redirect_uri: 'https://quiz.fabiobaser.de/signin-oidc',
     response_type: 'code',
     scope: 'openid profile UltimateTriviaAPI',
     post_logout_redirect_uri: 'https://quiz.fabiobaser.de/signout-oidc',
 }
-
-// const config = {
-//   authority: 'https://quiz.fabiobaser.de:5001',
-//   client_id: 'ultimate-trivia-client',
-//   redirect_uri: 'https://quiz.fabiobaser.de/signin-oidc',
-//   response_type: 'code',
-//   scope: 'openid profile UltimateTriviaAPI',
-//   post_logout_redirect_uri: 'https://quiz.fabiobaser.de/signout-oidc',
-// }
 
 const userManager = new UserManager(config)
 
