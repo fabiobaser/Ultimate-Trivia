@@ -50,10 +50,12 @@ export default class App extends Component {
     }
 
     createLobby = () => {
-        this.connection.invoke('CreateLobby', {
-            name: this.state.name,
-            avatarJson: JSON.stringify(this.state.avatar),
-        })
+        this.connection
+            .invoke('CreateLobby', {
+                name: this.state.name,
+                avatarJson: JSON.stringify(this.state.avatar),
+            })
+            .catch(console.error)
     }
 
     joinLobby = () => {
@@ -68,8 +70,8 @@ export default class App extends Component {
         this.setState({ chat: [], gameState: 'initial' })
     }
 
-    pushtToChat = ({ name = '', avatarJson = '' }, message) => {
-        const newEntry = { sender: name, avatar: JSON.parse(avatarJson), message }
+    pushtToChat = ({ name = '', avatarJson = '', system = true }, message) => {
+        const newEntry = { sender: name, avatar: JSON.parse(avatarJson), system, message }
         const chat = this.state.chat
         chat.push(newEntry)
 
@@ -95,7 +97,7 @@ export default class App extends Component {
 
         this.connection.on('broadcastMessage', ({ name, avatarJson }, message) => {
             console.debug('broadcastMessage: ', name, message)
-            this.pushtToChat({ name, avatarJson }, message)
+            this.pushtToChat({ name, avatarJson, system: false }, message)
         })
 
         this.connection.on('joinlobby', joinLobbyEvent => {
@@ -114,11 +116,14 @@ export default class App extends Component {
         })
 
         this.connection.on('userJoinedLobby', userJoinedEvent => {
-            console.log('%cuserJoinedEvent: ', 'color: blue', userJoinedEvent)
+            console.debug('%cuserJoinedEvent: ', 'color: orange', userJoinedEvent)
 
-            this.pushtToChat('', `${userJoinedEvent.newUser} ist dem Spiel beigetreten`)
+            const { newPlayer, players } = userJoinedEvent
+            const { name, avatarJson } = newPlayer
 
-            this.setState({ userArray: userJoinedEvent.players })
+            this.pushtToChat({ name, avatarJson }, `${name} ist dem Spiel beigetreten`)
+
+            this.setState({ userArray: players })
         })
 
         this.connection.on('leaveLobby', () => {

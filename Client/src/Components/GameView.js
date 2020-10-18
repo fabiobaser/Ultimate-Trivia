@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Grid, Input, Image, Feed, Label, List, Button } from 'semantic-ui-react'
+import { Grid, Input, Ref, Feed, Label, List, Button } from 'semantic-ui-react'
 import _ from 'lodash'
 import Avatar from 'avataaars'
 
@@ -44,6 +44,11 @@ export default class GameView extends Component {
         }
 
         this.setState({ selectedItemIndex: -1, selectedItem: '' })
+    }
+
+    scrollChat = ref => {
+        if (!ref) return
+        ref.scrollTop = ref.scrollHeight
     }
 
     render() {
@@ -127,27 +132,31 @@ export default class GameView extends Component {
                 </Grid.Column>
                 <Grid.Column width={4} style={{ display: 'flex', flexDirection: 'column', padding: '2rem' }}>
                     <h1>Chat</h1>
-                    <Feed style={{ marginTop: '1rem', flex: 1 }}>
-                        {chat.map((entry, index) => {
-                            const { sender, avatar, message } = entry
-                            return (
-                                <Feed.Event className={sender === '' ? 'systemMessage' : ''} key={sender + index}>
-                                    <Feed.Label
-                                        image={
-                                            <Avatar
-                                                style={{ width: '40px', height: '40px' }}
-                                                avatarStyle='Circle'
-                                                eyebrowType='Default'
-                                                mouthType='Default'
-                                                {...avatar}
-                                            />
-                                        }
-                                    />
-                                    <Feed.Content date={sender} summary={message} />
-                                </Feed.Event>
-                            )
-                        })}
-                    </Feed>
+                    <Ref innerRef={ref => this.scrollChat(ref)}>
+                        <Feed style={{ marginTop: '1rem', flex: 1 }}>
+                            {chat.map((entry, index) => {
+                                const { sender, avatar, system, message } = entry
+                                return (
+                                    <Feed.Event className={sender === '' ? 'systemMessage' : ''} key={sender + index}>
+                                        <Feed.Label
+                                            image={
+                                                system ? null : (
+                                                    <Avatar
+                                                        style={{ width: '40px', height: '40px' }}
+                                                        avatarStyle='Circle'
+                                                        eyebrowType='Default'
+                                                        mouthType='Default'
+                                                        {...avatar}
+                                                    />
+                                                )
+                                            }
+                                        />
+                                        <Feed.Content date={system ? '' : sender} summary={message} />
+                                    </Feed.Event>
+                                )
+                            })}
+                        </Feed>
+                    </Ref>
                     <Input
                         fluid
                         name={'message'}
