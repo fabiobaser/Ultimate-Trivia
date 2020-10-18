@@ -259,8 +259,10 @@ namespace UltimateTrivia.Application.Game
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowQuestion,
                 new ShowQuestionEvent
                 {
+                    CurrentRoundNr   = _gameState.CurrentRoundNr,
+                    MaxRoundNr = _gameState.MaxRounds,
                     Question = question.Content,
-                    QuestionNr = _gameState.CurrentQuestionNr,
+                    CurrentQuestionNr = _gameState.CurrentQuestionNr,
                     MaxQuestionNr = _gameState.Players.Count,
                     Answers = answers.Select(a => new Answer
                     {
