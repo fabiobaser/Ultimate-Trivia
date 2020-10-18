@@ -33,7 +33,7 @@ export default class App extends Component {
             question: '',
             points: {},
             results: [],
-        }        
+        }
     }
 
     componentDidMount() {
@@ -68,7 +68,7 @@ export default class App extends Component {
         this.setState({ chat: [], gameState: 'initial' })
     }
 
-    pushtToChat = ({ name, avatarJson }, message) => {
+    pushtToChat = ({ name = '', avatarJson = '' }, message) => {
         const newEntry = { sender: name, avatar: JSON.parse(avatarJson), message }
         const chat = this.state.chat
         chat.push(newEntry)
@@ -99,9 +99,7 @@ export default class App extends Component {
         })
 
         this.connection.on('joinlobby', joinLobbyEvent => {
-            this.pushtToChat('', 'Du bist dem Spiel beigetreten')
-
-            console.log('%cjoinLobbyEvent: ', 'color: blue', joinLobbyEvent)
+            console.debug('%cjoinLobbyEvent: ', 'color: orange', joinLobbyEvent)
 
             //this.copyLobbyId(joinLobbyEvent.lobbyId);
 
@@ -115,7 +113,7 @@ export default class App extends Component {
             })
         })
 
-        this.connection.on('userjoinedlobby', userJoinedEvent => {
+        this.connection.on('userJoinedLobby', userJoinedEvent => {
             console.log('%cuserJoinedEvent: ', 'color: blue', userJoinedEvent)
 
             this.pushtToChat('', `${userJoinedEvent.newUser} ist dem Spiel beigetreten`)
@@ -203,14 +201,9 @@ export default class App extends Component {
             }
         })
 
-        this.connection
-            .start()
-            .then(result => {
-                console.log(result)
-            })
-            .catch(error => {
-                console.error(error)
-            })
+        this.connection.start().catch(error => {
+            console.error(error)
+        })
     }
 
     handleInputChange = (e, props, maxLength = 100) => {

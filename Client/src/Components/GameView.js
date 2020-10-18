@@ -85,8 +85,6 @@ export default class GameView extends Component {
                 break
         }
 
-        console.log('uAR ', userArray)
-
         let userPointsArray = userArray.map(user => ({
             username: user.name,
             points: points[user.name] || 0,
