@@ -5,7 +5,7 @@ COPY package*.json /app/
 RUN npm install
 COPY . ./
 
-RUN mkdir /app/dist
+RUN npm run build
 
 FROM nginx:alpine
 COPY --from=build-env /app/dist /usr/share/nginx.html
