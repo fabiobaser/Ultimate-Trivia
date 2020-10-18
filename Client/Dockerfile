@@ -1,5 +1,13 @@
 FROM node:alpine as build-env
+
+RUN ["touch", "/docker-entrypoint.sh"]
+RUN ["chmod", "+x", "/docker-entrypoint.sh"]
+
 WORKDIR /app
+
+RUN ["touch", "/docker-entrypoint.sh"]
+RUN ["chmod", "+x", "/docker-entrypoint.sh"]
+
 COPY package*.json /app/
 RUN npm install
 COPY . ./
