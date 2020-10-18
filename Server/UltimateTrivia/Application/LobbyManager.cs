@@ -111,6 +111,7 @@ namespace UltimateTrivia.Application
             {
                 LobbyId = lobbyId,
                 CreatorId = Lobbies[lobbyId].CreatorId,
+                Player = playerData,
                 Players = playerInLobby
             });
             

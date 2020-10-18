@@ -48,6 +48,7 @@ PlayerJoinedEvent {
 JoinLobbyEvent {
 	string lobbyId
 	string creatorId // PlayerId
+	PlayerData player	// including new generated playerId
 	PlayerData[] players
 }
 

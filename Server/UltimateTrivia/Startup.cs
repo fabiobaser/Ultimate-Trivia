@@ -68,10 +68,8 @@ namespace UltimateTrivia
 
             services.AddRazorPages();
             
-            services.AddCors(options =>
-                options
-                    .AddDefaultPolicy(builder =>
-                        builder
+            services.AddCors(options => options
+                    .AddDefaultPolicy(builder => builder
                             .WithOrigins(
                                 "http://localhost:1234", 
                                 "https://localhost:1234", 
@@ -121,10 +119,14 @@ namespace UltimateTrivia
                     options.Clients.Add(new Client
                     {
                         Enabled   = true,
-                        AllowedScopes = new List<string>() {"UltimateTriviaAPI"},
+                        AllowedScopes = new List<string> {"UltimateTriviaAPI"},
                         ClientId = "Swagger",
                         ClientName = "Swagger",
-                        RedirectUris = new List<string>() {"https://localhost:5001/swagger/oauth2-redirect.html", "https://quiz.fabiobaser.de:5001/swagger/oauth2-redirect.html"},
+                        RedirectUris = new List<string>
+                        {
+                            "https://localhost:5001/swagger/oauth2-redirect.html", 
+                            "https://quiz.fabiobaser.de:5001/swagger/oauth2-redirect.html"
+                        },
                         AllowedGrantTypes = GrantTypes.Code,
                         RequireClientSecret = false,
                         RequirePkce = true,
