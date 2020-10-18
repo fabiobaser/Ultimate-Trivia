@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Grid, Input, Ref, Feed, Label, List, Button } from 'semantic-ui-react'
+import { Grid, Input, Ref, Feed, Label, List, Button, Icon, Popup } from 'semantic-ui-react'
 import _ from 'lodash'
 import Avatar from 'avataaars'
 
@@ -64,8 +64,8 @@ export default class GameView extends Component {
             topics,
             points,
             question,
-            name,
             lobbyCreator,
+            playerId,
             possibleAnswers,
             results,
         } = this.props
@@ -101,7 +101,35 @@ export default class GameView extends Component {
         return (
             <Grid columns={3} divided id={'gameView'}>
                 <Grid.Column width={4} style={{ display: 'flex', flexDirection: 'column', padding: '2rem' }}>
-                    <h1>Spieler</h1>
+                    <div style={{ display: 'flex' }}>
+                        <h1 style={{ flex: 1 }}>Spieler</h1>
+                        <Button.Group style={{ display: 'block' }}>
+                            <Popup
+                                position={'bottom center'}
+                                content={'Spiel verlassen'}
+                                trigger={
+                                    <Button icon basic color='red' onClick={leaveLobby} className='noBorderBoxShadow'>
+                                        <Icon name='sign out' />
+                                    </Button>
+                                }
+                            />
+                            <Popup
+                                position={'bottom center'}
+                                content={lobbyId + ' kopieren'}
+                                trigger={
+                                    <Button
+                                        icon
+                                        basic
+                                        color='grey'
+                                        onClick={() => copyLobbyId()}
+                                        className='noBorderBoxShadow'
+                                    >
+                                        <Icon name='clipboard' />
+                                    </Button>
+                                }
+                            />
+                        </Button.Group>
+                    </div>
                     <List ordered style={{ flex: 1 }}>
                         {userPointsArray.map((userObj, userIndex) => {
                             return (
@@ -122,11 +150,8 @@ export default class GameView extends Component {
                             )
                         })}
                     </List>
-                    <Button.Group fluid>
-                        <Button color='red' basic content='Spiel verlassen' onClick={leaveLobby} />
-                        <Button color={'black'} basic content={lobbyId} onClick={() => copyLobbyId()} />
-                    </Button.Group>
-                    {gameState === 'lobby' && lobbyCreator === name && (
+
+                    {gameState === 'lobby' && lobbyCreator === playerId && (
                         <Button fluid color={'green'} content='Starten' onClick={createGame} />
                     )}
                 </Grid.Column>

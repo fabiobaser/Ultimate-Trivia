@@ -270,6 +270,7 @@ export default class App extends Component {
             possibleAnswers,
             results,
             lobbyCreator,
+            playerId,
             points,
         } = this.state
 
@@ -302,6 +303,7 @@ export default class App extends Component {
                             lobbyCreator={lobbyCreator}
                             lobbyId={lobbyId}
                             name={name}
+                            playerId={playerId}
                             points={points}
                             possibleAnswers={possibleAnswers}
                             question={question}
