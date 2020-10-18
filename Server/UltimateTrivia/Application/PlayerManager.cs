@@ -2,6 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using UltimateTrivia.Database.Game;
 
 namespace UltimateTrivia.Application
 {
@@ -26,9 +28,9 @@ namespace UltimateTrivia.Application
             return Players.Where(kv => kv.Value.LobbyId != null).Select(kv => kv.Value.LobbyId).Distinct().ToList();
         }
         
-        public void AddPlayer(PlayerData playerData, string connectionId, string userIdentifier)
+        public void AddPlayer(PlayerData playerData, string connectionId, string userId = null)
         {
-            playerData.Id = userIdentifier ?? Guid.NewGuid().ToString();
+            playerData.Id = userId ?? Guid.NewGuid().ToString();
             
             if (!Players.ContainsKey(connectionId))
             {
@@ -36,7 +38,7 @@ namespace UltimateTrivia.Application
                 {
                     Data = playerData,
                     ConnectionId = connectionId,
-                    IdentityId = userIdentifier
+                    UserId = userId
                 };
             }
         }

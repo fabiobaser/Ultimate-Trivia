@@ -16,6 +16,17 @@ export default class LobbyCreateView extends Component {
         }
     }
 
+    handleLobbyJoin = e => {
+        const targetType = e.target.nodeName
+        if (targetType === 'INPUT') return
+
+        const { lobbyId, joinLobby } = this.props
+        if (lobbyId.length === 6) {
+            console.log('Trying to join Lobby: ', lobbyId)
+            joinLobby()
+        }
+    }
+
     handleAvatarOptionChange = (e, targetProps) => {
         const { optiontype, value } = targetProps
         const { updateAvatar, avatar } = this.props

@@ -1,14 +1,19 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using BackgroundScheduler;
 using IdentityServer4.Models;
+using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +45,7 @@ namespace UltimateTrivia
             services.AddTransient<LobbyManager>();
             services.AddTransient<PlayerManager>();
             services.AddTransient<QuestionRepository>();
+            services.AddTransient<UserRepository>();
             services.AddTransient<ICurrentUserService, CurrentUserService>();
             
             services.AddSingleton<PlayerStore>();
@@ -88,6 +94,8 @@ namespace UltimateTrivia
                 {
                     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 });
+
+            services.AddSingleton<IUserIdProvider, DefaultUserIdProvider>();
             
             services.AddApiVersioningAndExplorer();
             services.AddOpenApi();
@@ -164,7 +172,18 @@ namespace UltimateTrivia
                     options.ClientSecret = "934145e9-6b75-43e0-9096-425cc6e66712";
                     options.CorrelationCookie.SameSite = SameSiteMode.None;
                 });
-            
+
+            // services.PostConfigure<JwtBearerOptions>(IdentityServerJwtConstants.IdentityServerJwtBearerScheme ,options =>
+            // {
+            //     options.Events.OnMessageReceived = async context =>
+            //     {
+            //         var token = context.Request.Query["Token"].FirstOrDefault();
+            //         if (token != null)
+            //         {
+            //             context.Token = token;
+            //         }
+            //     };
+            // });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -203,6 +222,19 @@ namespace UltimateTrivia
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
+
+            // TODO: HACK: provide bearer token from query - websocket cant set auth header - change to JwtBearerEvents
+            app.Use(async (context, next) =>
+            {
+                var token = context.Request.Query["access_token"].FirstOrDefault();
+                var path = context.Request.Path;
+                if (!string.IsNullOrWhiteSpace(token) && path.StartsWithSegments("/triviaGameServer"))
+                {
+                    context.Request.Headers.Add("Authorization", "Bearer " + token);
+                }
+
+                await next();
+            });
             
             app.UseRouting();
             app.UseAuthentication();

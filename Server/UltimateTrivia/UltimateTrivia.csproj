@@ -97,6 +97,12 @@
         <Content Remove="$(SpaRoot)**" />
         <None Remove="$(SpaRoot)**" />
         <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
+    </ItemGroup>    
+    
+    
+    <ItemGroup>
+      <Compile Remove="Exceptions\DuplicateUserNameException.cs" />
+      <Compile Remove="Controllers\IdentityController.cs" />
     </ItemGroup>
 
 </Project>

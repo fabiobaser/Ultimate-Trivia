@@ -13,6 +13,7 @@ namespace UltimateTrivia.Database.Game
 
         public DbSet<Question> Questions { get; set; }
         public DbSet<Answer> Answers { get; set; }
+        public DbSet<User> Users { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IDateProvider dateProvider, ICurrentUserService currentUserService) : base(options)
         {
@@ -26,7 +27,9 @@ namespace UltimateTrivia.Database.Game
                 .HasKey(q => q.Id);
             modelBuilder.Entity<Answer>()
                 .HasKey(a => a.Id);
-
+            modelBuilder.Entity<User>()
+                .HasKey(u => u.Id);
+            
             modelBuilder.Entity<Question>()
                 .Property(q => q.Type)
                 .HasConversion<string>();
@@ -35,6 +38,8 @@ namespace UltimateTrivia.Database.Game
                 .HasMany(q => q.Answers)
                 .WithOne(q => q.Question)
                 .HasForeignKey(a => a.QuestionId);
+
+            
             
             base.OnModelCreating(modelBuilder);
         }
@@ -47,11 +52,11 @@ namespace UltimateTrivia.Database.Game
                 {
                     case EntityState.Added:
                         entry.Entity.Created = _dateProvider.Now;
-                        entry.Entity.CreatedBy = _currentUserService.GetCurrentUser();
+                        entry.Entity.CreatedBy = _currentUserService.GetCurrentUserIdentity();
                         break;
                     case EntityState.Modified:
                         entry.Entity.LastModified = _dateProvider.Now;
-                        entry.Entity.LastModifiedBy = _currentUserService.GetCurrentUser();
+                        entry.Entity.LastModifiedBy = _currentUserService.GetCurrentUserIdentity();
                         break;
                 }
             }

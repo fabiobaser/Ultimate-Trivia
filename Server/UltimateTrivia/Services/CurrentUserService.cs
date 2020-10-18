@@ -12,7 +12,7 @@ namespace UltimateTrivia.Services
             _httpContextAccessor = httpContextAccessor;
         }
         
-        public string GetCurrentUser()
+        public string GetCurrentUserIdentity()
         {
             var identityUser = _httpContextAccessor.HttpContext?.User;
 

@@ -4,8 +4,7 @@
     {
         public PlayerData Data { get; set; } = new PlayerData();
         public string ConnectionId { get; set; }
-        
-        public string IdentityId { get; set; }
+        public string UserId { get; set; }
         public string LobbyId { get; set; }
         
     }

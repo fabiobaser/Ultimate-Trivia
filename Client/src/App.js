@@ -8,10 +8,10 @@ import Config from './config'
 import { randomAvatar } from './GameViews/avatarOptions'
 import GameView from './Components/GameView'
 
+import store from "./redux/store";
 import { signinRedirect } from './Components/api-authentication/services/userService'
-import { loadUserFromStorage } from './Components/api-authentication/services/userService'
-
-import store from './redux/store'
+import { fetchRegisteredUser } from "./Components/api-authentication/services/apiService";
+import { loadUserFromStorage } from "./Components/api-authentication/services/userService";
 
 export default class App extends Component {
     constructor(props) {
@@ -37,8 +37,18 @@ export default class App extends Component {
         }
     }
 
-    componentDidMount() {
-        this.connectToHub()
+    async componentDidMount() {
+
+        let user = await fetchRegisteredUser()
+        console.log(user)
+        if(user) {
+            this.setState({
+                name: user.name ?? this.state.name,
+                avatar: user.avatarJson ? JSON.parse(user.avatarJson) : this.state.avatar
+            })
+        }
+        
+        await this.connectToHub()
         window.rapp = this
     }
 
@@ -91,8 +101,11 @@ export default class App extends Component {
         copyToClipboard(lobbyId)
     }
 
-    connectToHub = () => {
-        this.connection = new HubConnectionBuilder().withUrl(Config.baseURL + '/triviaGameServer').build()
+    connectToHub = async () => {
+        
+        let user = await loadUserFromStorage(store)
+        
+        this.connection = new HubConnectionBuilder().withUrl(Config.baseURL + '/triviaGameServer', { accessTokenFactory: () => user.access_token }).build()
         window.connection = this.connection
 
         this.connection.on('broadcastMessage', ({ name, avatarJson }, message) => {
@@ -244,18 +257,8 @@ export default class App extends Component {
     // AUTHENTICATION TEST PLAYGROUND
 
     login = () => {
-        signinRedirect()
-    }
-
-    callApi = () => {
-        loadUserFromStorage(store).then(user => {
-            console.log(user)
-
-            fetch('https://quiz.fabiobaser.de:5001/debug', {
-                headers: {
-                    Authorization: 'Bearer ' + user.access_token,
-                },
-            })
+        signinRedirect().catch(e => {
+            console.log(e)
         })
     }
 
@@ -278,8 +281,8 @@ export default class App extends Component {
 
         return (
             <div id={'appContainer'} style={{ display: 'flex', flexDirection: 'column' }}>
-                {/*<button onClick={() => this.login()}>Login</button>
-                <button onClick={() => this.callApi()}>Call api</button>*/}
+                <button onClick={() => this.login()}>Login</button>
+                
                 <div id={'backdropView'} style={{ flex: 1, background: 'rgba(229, 233, 236, 1.00)' }}>
                     {this.state.gameState === 'initial' && (
                         <LobbyCreateView
@@ -290,6 +293,7 @@ export default class App extends Component {
                             name={this.state.name}
                             handleInputChange={this.handleInputChange}
                             updateAvatar={this.updateAvatar}
+                            avatar={this.state.avatar}
                         />
                     )}
 

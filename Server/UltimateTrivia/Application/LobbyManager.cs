@@ -89,7 +89,7 @@ namespace UltimateTrivia.Application
 
             if (playerInLobby.Any(p => p.Name == playerData.Name))
             {
-                throw new DuplicateUserNameException("Username already taken");
+                throw new DuplicatePlayerNameException("Username already taken");
             }
             
             if (playerInLobby.Any(p => p.Id == playerData.Id))

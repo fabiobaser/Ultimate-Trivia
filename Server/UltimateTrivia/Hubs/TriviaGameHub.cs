@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using UltimateTrivia.Application;
 using UltimateTrivia.Application.Game;
 using UltimateTrivia.Constants;
+using UltimateTrivia.Database.Game;
 using UltimateTrivia.Exceptions;
 using UltimateTrivia.Hubs.Events;
 
@@ -13,12 +14,14 @@ namespace UltimateTrivia.Hubs
     public class TriviaGameHub : Hub
     {
         private readonly PlayerManager _playerManager;
+        private readonly UserRepository _userRepository;
         private readonly ILogger<TriviaGameHub> _logger;
         private readonly LobbyManager _lobbyManager;
 
-        public TriviaGameHub(LobbyManager lobbyManager, PlayerManager playerManager, ILogger<TriviaGameHub> logger)
+        public TriviaGameHub(LobbyManager lobbyManager, PlayerManager playerManager, UserRepository userRepository, ILogger<TriviaGameHub> logger)
         {
             _playerManager = playerManager;
+            _userRepository = userRepository;
             _logger = logger;
             _lobbyManager = lobbyManager;
         }
@@ -51,9 +54,21 @@ namespace UltimateTrivia.Hubs
         {
             try
             {
+                if (Context.UserIdentifier != null)
+                {
+                    var user = await _userRepository.GetUserByIdentityId(Context.UserIdentifier);
+                    user.Name = playerData.Name;
+                    user.AvatarJson = playerData.AvatarJson;
+                    await _userRepository.UpdateUser(user);
+                    _playerManager.AddPlayer(playerData, Context.ConnectionId, user.Id);
+                }
+                else
+                {
+                    _playerManager.AddPlayer(playerData, Context.ConnectionId);
+                }
+                
                 _logger.LogDebug("{playerId} joined lobby {lobbyId}", playerData.Id, lobbyId);
-                _playerManager.AddPlayer(playerData, Context.ConnectionId, Context.UserIdentifier);
-            
+                
                 await _lobbyManager.JoinLobbyAsync(lobbyId, playerData, Context.ConnectionId);
                 await Groups.AddToGroupAsync(Context.ConnectionId, lobbyId);
             }
@@ -67,7 +82,18 @@ namespace UltimateTrivia.Hubs
         {
             try
             {
-                _playerManager.AddPlayer(playerData, Context.ConnectionId, Context.UserIdentifier);
+                if (Context.UserIdentifier != null)
+                {
+                    var user = await _userRepository.GetUserByIdentityId(Context.UserIdentifier);
+                    user.Name = playerData.Name;
+                    user.AvatarJson = playerData.AvatarJson;
+                    await _userRepository.UpdateUser(user);
+                    _playerManager.AddPlayer(playerData, Context.ConnectionId, user.Id);
+                }
+                else
+                {
+                    _playerManager.AddPlayer(playerData, Context.ConnectionId);
+                }
             
                 var lobby = await _lobbyManager.CreateLobbyAsync(playerData);
             
@@ -144,7 +170,7 @@ namespace UltimateTrivia.Hubs
             
             switch (exception)
             {
-                case DuplicateUserNameException duplicateUserNameException:
+                case DuplicatePlayerNameException duplicateUserNameException:
                     await Clients.Caller.SendAsync(RpcFunctionNames.Error, new ErrorEvent
                     {
                         ErrorCode = ErrorCodes.DuplicateUserName,
