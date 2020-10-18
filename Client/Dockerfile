@@ -1,9 +1,6 @@
 FROM node:alpine as build-env
 WORKDIR /app
 
-RUN touch docker-entrypoint.sh
-RUN chmod +x docker-entrypoint.sh
-
 COPY package*.json /app/
 RUN npm install
 COPY . ./
@@ -15,4 +12,4 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY nginx/nginx.conf /etc/nginx/conf.d
 COPY nginx/Certificates /etc/nginx/Certificates/
 EXPOSE 80 443
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
