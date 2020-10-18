@@ -108,7 +108,7 @@ namespace UltimateTrivia.Hubs
                 await HandleException(e);
             }
         }
-
+        
         public async Task LeaveLobby()
         {
             try
@@ -127,7 +127,7 @@ namespace UltimateTrivia.Hubs
                 await HandleException(e);
             }
         }
-
+        
         public async Task StartGame(StartGameEvent startGameEvent)
         {
             try

@@ -163,7 +163,7 @@ namespace UltimateTrivia.Application.Game
         private async Task StartingNewRoundEnter(object data, CancellationToken ct)
         {
             // get next player in alphabetical order, return null when last player was reached
-            var next = _gameState.Players.FirstOrDefault(u => string.CompareOrdinal(u.Data.Id, _gameState.CurrentPlayer.Id) > 0);
+            var next = _gameState.Players.FirstOrDefault(u => string.CompareOrdinal(u.Data.Id, _gameState.CurrentPlayer?.Id) > 0);
 
             if (next == null)
             {
