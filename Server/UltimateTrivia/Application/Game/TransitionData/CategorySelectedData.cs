@@ -2,7 +2,7 @@
 {
     public class CategorySelectedData
     {
-        public string Category { get; set; }
+        public string CategoryId { get; set; }
         public PlayerData Player { get; set; }
     }
 }

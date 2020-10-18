@@ -32,15 +32,12 @@ namespace UltimateTrivia.Application
         {
             playerData.Id = userId ?? Guid.NewGuid().ToString();
             
-            if (!Players.ContainsKey(connectionId))
+            Players[connectionId] = new Player
             {
-                Players[connectionId] = new Player
-                {
-                    Data = playerData,
-                    ConnectionId = connectionId,
-                    UserId = userId
-                };
-            }
+                Data = playerData,
+                ConnectionId = connectionId,
+                UserId = userId
+            };
         }
 
         public void RemovePlayer(string connectionId)

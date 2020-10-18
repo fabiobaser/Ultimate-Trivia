@@ -193,12 +193,20 @@ namespace UltimateTrivia.Application.Game
         
         private async Task ShowingCategoriesEnter(object data, CancellationToken ct)
         {
-            _gameState.Categories = await _questionRepository.GetRandomCategories(3);
+            _gameState.Categories = (await _questionRepository.GetRandomCategories(3)).Select(c => new GameState.Category()
+            {
+                Id = Guid.NewGuid().ToString(),
+                Content = c
+            }).ToList();
             
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.ShowCategories, new ShowCategoriesEvent
             {
                 CurrentPlayer = _gameState.CurrentPlayer,
-                Categories = _gameState.Categories
+                Categories = _gameState.Categories.Select(c => new Category
+                {
+                    Id = c.Id,
+                    Content = c.Content
+                }).ToList()
             }, ct);
 
             await MoveNext(EGameCommand.WaitForCategory, ct);
@@ -213,7 +221,11 @@ namespace UltimateTrivia.Application.Game
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
                 new CategorySelectedEvent
                 {
-                    Category = _gameState.CurrentCategory,
+                    Category = new Category
+                    {
+                        Id = _gameState.CurrentCategory.Id,
+                        Content = _gameState.CurrentCategory.Content
+                    },
                     Player = _gameState.CurrentPlayer
                 }, cancellationToken: ct);
                     
@@ -223,7 +235,7 @@ namespace UltimateTrivia.Application.Game
         
         private async Task ShowingQuestionEnter(object data, CancellationToken ct)
         {
-            var question = await _questionRepository.GetRandomQuestionsFromCategory(_gameState.CurrentCategory);
+            var question = await _questionRepository.GetRandomQuestionsFromCategory(_gameState.CurrentCategory.Content);
 
             _gameState.CurrentQuestion = question.Content;
             _gameState.CurrentQuestionStartedAt = _dateProvider.Now;
@@ -347,13 +359,22 @@ namespace UltimateTrivia.Application.Game
             }
             else
             {
-                Logger.LogDebug("{playerId} selected category {category}", categorySelectedData.Player.Id, categorySelectedData.Category);
-                _gameState.CurrentCategory = categorySelectedData.Category;
+                Logger.LogDebug("{playerId} selected category {category}", categorySelectedData.Player.Id, categorySelectedData.CategoryId);
+                _gameState.CurrentCategory = _gameState.Categories.FirstOrDefault(c => c.Id == categorySelectedData.CategoryId);
+
+                if (_gameState.CurrentCategory == null)
+                {
+                    throw new ApplicationException("invalid category Id");
+                }
                     
                 await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
                     new CategorySelectedEvent
                     {
-                        Category = categorySelectedData.Category,
+                        Category = new Category
+                        {
+                            Id = _gameState.CurrentCategory.Id,
+                            Content = _gameState.CurrentCategory.Content
+                        },
                         Player = categorySelectedData.Player
                     }, cancellationToken: ct);
                     
@@ -456,7 +477,11 @@ namespace UltimateTrivia.Application.Game
                     await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.CategorySelected,
                         new CategorySelectedEvent
                         {
-                            Category = _gameState.CurrentCategory,
+                            Category = new Category
+                            {
+                                Id = _gameState.CurrentCategory.Id,
+                                Content = _gameState.CurrentCategory.Content
+                            },
                             Player = _gameState.CurrentPlayer
                         }, cancellationToken: ct);
                     

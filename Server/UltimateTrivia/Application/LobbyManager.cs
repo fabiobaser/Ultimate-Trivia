@@ -219,7 +219,7 @@ namespace UltimateTrivia.Application
                 case Game.Game.EGameEvent.CategorySelected:
                     _gameManager.PassEventToGame(lobby.GameId, transition, new CategorySelectedData
                     {
-                        Category = data,
+                        CategoryId = data,
                         Player = player.Data
                     });
                     break;

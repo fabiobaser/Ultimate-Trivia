@@ -15,7 +15,7 @@ createLobby(PlayerData)
 joinLobby(PlayerData, string lobbyId)
 leaveLobby()
 startGame(StartGameEvent)
-categorySelected(string category)
+categorySelected(string categoryId)
 answerSelected(string answerId)
 
 
@@ -30,6 +30,11 @@ PlayerData {
 }
 
 Answer {
+	string content,
+	string id
+}
+
+Category {
 	string content,
 	string id
 }
@@ -64,7 +69,7 @@ GameStartedEvent {
 	
 	// only filled when joining a running game
 	PlayerData CurrentPlayer
-	string currentCategory
+	Category currentCategory
 	string currentQuestion
 	Answer[] CurrentAnswers
 }
@@ -74,12 +79,12 @@ NextRoundStartedEvent {
 }
 
 ShowCategoriesEvent {
-	string[] categories
+	Category[] categories
 	PlayerData currentPlayer
 }
 
 CategorySelectedEvent {
-	string category
+	Category category
 	PlayerData currentPlayer
 }
 

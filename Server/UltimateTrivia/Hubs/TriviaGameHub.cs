@@ -140,11 +140,11 @@ namespace UltimateTrivia.Hubs
             }
         }
         
-        public async Task CategorySelected(string category)
+        public async Task CategorySelected(string categoryId)
         {
             try
             {
-                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameEvent.CategorySelected, category);
+                await _lobbyManager.PassEventToGame(Context.ConnectionId, Game.EGameEvent.CategorySelected, categoryId);
             }
             catch (Exception e)
             {

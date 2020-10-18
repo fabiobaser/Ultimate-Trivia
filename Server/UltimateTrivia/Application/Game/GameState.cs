@@ -21,14 +21,20 @@ namespace UltimateTrivia.Application.Game
                 public string Content { get; set; }
                 public bool IsCorrect { get; set; }
             }
+
+            public class Category
+            {
+                public string Id { get; set; }
+                public string Content { get; set; }
+            }
             
             public int MaxRounds { get; set; }
             public int CurrentRoundNr { get; set; }
             public PlayerData CurrentPlayer { get; set; }
 
             
-            public List<string> Categories { get; set; }
-            public string CurrentCategory { get; set; }
+            public List<Category> Categories { get; set; }
+            public Category CurrentCategory { get; set; }
             public int CurrentQuestionNr { get; set; }
             public string CurrentQuestion { get; set; }
             public List<PlayerAnswer> CurrentPlayerAnswers { get; set; } = new List<PlayerAnswer>();
@@ -45,7 +51,7 @@ namespace UltimateTrivia.Application.Game
             {
                 CurrentRoundNr++;
                 
-                Categories = new List<string>();
+                Categories = new List<Category>();
                 CurrentCategory = null;
                 CurrentQuestionNr = 1;
                 CurrentQuestion = null;
@@ -58,7 +64,7 @@ namespace UltimateTrivia.Application.Game
             {
                 CurrentQuestionNr++;
                 
-                Categories = new List<string>();
+                Categories = new List<Category>();
                 CurrentCategory = null;
                 CurrentQuestion = null;
                 CurrentPlayerAnswers = new List<PlayerAnswer>();
