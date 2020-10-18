@@ -63,6 +63,8 @@ PlayerLeftEvent {
 }
 
 GameStartedEvent {
+	int maxRoundNr
+	int maxQuestionNr
 	int currentRoundNr
 	int currentQuestionNr
 	Dictionary<string, int> Points
@@ -89,8 +91,10 @@ CategorySelectedEvent {
 }
 
 ShowQuestionEvent {
+	int currentRoundNr
+	int maxRoundNr
 	string question
-	int questionNr
+	int CurrentQuestionNr
 	Answer[] answers
 }
 
