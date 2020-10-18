@@ -7,6 +7,7 @@ namespace UltimateTrivia.Hubs.Events
     {
         public string Question { get; set; }
         public int QuestionNr { get; set; }
+        public int MaxQuestionNr { get; set; }
         public List<Answer> Answers { get; set; }
     }
 }

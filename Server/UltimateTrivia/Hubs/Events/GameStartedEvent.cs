@@ -7,7 +7,9 @@ namespace UltimateTrivia.Hubs.Events
 {
     public class GameStartedEvent
     {
+        public int MaxRoundNr { get; set; }
         public int CurrentRoundNr { get; set; }
+        public int MaxQuestionNr { get; set; }
         public int CurrentQuestionNr { get; set; }
         public PlayerData CurrentPlayer { get; set; }
         public Game.GameState.Category CurrentCategory { get; set; }

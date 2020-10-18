@@ -153,6 +153,8 @@ namespace UltimateTrivia.Application.Game
             
             await _hubContext.Clients.Group(_configuration.LobbyId).SendAsync(RpcFunctionNames.GameStarted, new GameStartedEvent
             {
+                MaxRoundNr = _gameState.MaxRounds,
+                MaxQuestionNr = _gameState.Players.Count,
                 CurrentRoundNr = _gameState.CurrentRoundNr,
                 CurrentQuestionNr = _gameState.CurrentQuestionNr,
                 Points = _gameState.Points
@@ -259,6 +261,7 @@ namespace UltimateTrivia.Application.Game
                 {
                     Question = question.Content,
                     QuestionNr = _gameState.CurrentQuestionNr,
+                    MaxQuestionNr = _gameState.Players.Count,
                     Answers = answers.Select(a => new Answer
                     {
                         Content = a.Content,
@@ -435,6 +438,8 @@ namespace UltimateTrivia.Application.Game
             
             await _hubContext.Clients.Client(playerJoinedData.ConnectionId).SendAsync(RpcFunctionNames.GameStarted, new GameStartedEvent
             {
+                MaxRoundNr = _gameState.MaxRounds,
+                MaxQuestionNr = _gameState.Players.Count,
                 CurrentRoundNr = _gameState.CurrentRoundNr,
                 CurrentQuestionNr = _gameState.CurrentQuestionNr,
                 CurrentCategory = _gameState.CurrentCategory,
