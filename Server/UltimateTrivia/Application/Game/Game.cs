@@ -281,11 +281,8 @@ namespace UltimateTrivia.Application.Game
                 {
                     Answers = _gameState.CurrentAnswers.Select(a => new HighlightCorrectAnswerEvent.PlayerAnswer
                     {
-                        Answer = new Answer
-                        {
-                            Content = a.Content,
-                            Id = a.Id
-                        },
+                        Content = a.Content,
+                        Id = a.Id,
                         Correct = a.IsCorrect,
                         SelectedBy = _gameState.CurrentPlayerAnswers.Where(pa => pa.Answer.IsCorrect).Select(pa => pa.Player).ToList()
                     }).ToList()

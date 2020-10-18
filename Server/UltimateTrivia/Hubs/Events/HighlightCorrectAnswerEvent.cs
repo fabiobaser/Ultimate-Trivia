@@ -10,7 +10,8 @@ namespace UltimateTrivia.Hubs.Events
 
         public class PlayerAnswer
         {
-            public Answer Answer { get; set; }
+            public string Id { get; set; }
+            public string Content { get; set; }
             public bool Correct { get; set; }
             public List<PlayerData> SelectedBy { get; set; }
         }
