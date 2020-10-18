@@ -61,7 +61,14 @@ export default class LobbyCreateView extends Component {
                 onChange={this.handleAvatarOptionChange}
                 selection
                 size={'mini'}
-                style={{ width: '50%', display: 'inline-block', background: 'rgba(0,0,0,0.04)', borderRadius: 0, border: 'none', fontSize: '90%' }}
+                style={{
+                    width: '50%',
+                    display: 'inline-block',
+                    background: 'rgba(0,0,0,0.04)',
+                    borderRadius: 0,
+                    border: 'none',
+                    fontSize: '90%',
+                }}
             />
         ))
 
@@ -83,7 +90,7 @@ export default class LobbyCreateView extends Component {
                         <h1 className='clickToAction'>Klicken zum Erstellen</h1>
                     </div>
                 </Grid.Column>
-                <Grid.Column style={{ textAlign: 'center' }}>
+                <Grid.Column id={'avatarColumn'} style={{ textAlign: 'center' }}>
                     <Avatar
                         avatarStyle='Transparent'
                         mouthType='Default'
@@ -99,7 +106,15 @@ export default class LobbyCreateView extends Component {
                         style={{ marginBottom: '-1.4rem' }}
                     />
                     <Divider />
-                    <Input name={'name'} onChange={this.props.handleInputChange} fluid transparent value={this.props.name} size={'huge'} className='nameInput'>
+                    <Input
+                        name={'name'}
+                        onChange={this.props.handleInputChange}
+                        fluid
+                        transparent
+                        value={this.props.name}
+                        size={'huge'}
+                        className='nameInput'
+                    >
                         <input />
                         <Icon name='pencil' />
                     </Input>
@@ -129,7 +144,8 @@ export default class LobbyCreateView extends Component {
                     <div style={{ height: 'auto' }}>
                         <h1>Spiel Beitreten</h1>
                         <p>
-                            Wenn ein Freund ein Spiel erstellt kannst du hier den Code eingeben und dem Spiel beitreten. <b>Viel Spaß!</b>
+                            Wenn ein Freund ein Spiel erstellt kannst du hier den Code eingeben und dem Spiel beitreten.{' '}
+                            <b>Viel Spaß!</b>
                         </p>
                         <Input
                             name='lobbyId'

@@ -65,7 +65,6 @@ export default class App extends Component {
     }
 
     leaveLobby = () => {
-        this.pushtToChat('', 'You left the lobby')
         this.connection.invoke('LeaveLobby')
         this.setState({ chat: [], gameState: 'initial' })
     }
@@ -103,13 +102,16 @@ export default class App extends Component {
         this.connection.on('joinlobby', joinLobbyEvent => {
             console.debug('%cjoinLobbyEvent: ', 'color: orange', joinLobbyEvent)
 
+            const { player, players, creatorId, lobbyId } = joinLobbyEvent
+
             //this.copyLobbyId(joinLobbyEvent.lobbyId);
 
             this.setState({
-                userArray: joinLobbyEvent.players,
-                lobbyCreator: joinLobbyEvent.creatorId,
+                userArray: players,
+                lobbyCreator: creatorId,
                 connectedToLobby: true,
-                lobbyId: joinLobbyEvent.lobbyId,
+                playerId: player.id,
+                lobbyId: lobbyId,
                 inGame: false,
                 gameState: 'lobby',
             })

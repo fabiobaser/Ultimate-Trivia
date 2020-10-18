@@ -2,16 +2,35 @@
 
 $primaryColor: #b24592;
 
+@mixin scrollbars {
+  &:hover::-webkit-scrollbar-thumb {
+    background: $primaryColor;
+  }
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.05);
+    border-radius: 0;
+  }
+}
+
 #app {
   height: 100%;
   max-height: 100%;
-  overflow: scroll;
+  overflow: hidden;
 }
 
 #appContainer {
  height: 100%;
   max-height: 100%;
-  overflow: scroll;
+  overflow: hidden;
 }
 
 #backdropView {
@@ -19,7 +38,7 @@ $primaryColor: #b24592;
   background: rgba(229, 233, 236, 1.00);
   padding: 2%;
   max-height: 100%;
-  overflow: scroll;
+  overflow: hidden;
 }
 
 #navBarLogo {
@@ -36,7 +55,7 @@ $primaryColor: #b24592;
   box-shadow: 0 0 11px 5px #0000000d;
   margin: 0;
   max-height: 100%;
-  overflow: scroll;
+  overflow: hidden;
 }
 
 #questionContainer {
@@ -142,9 +161,13 @@ $primaryColor: #b24592;
   }
 }
 
-/*#createColumn:hover h1 {
-  color: white !important;
-}*/
+#avatarColumn {
+  max-height: 100%;
+  overflow: scroll;
+
+  @include scrollbars;
+
+}
 
 
 #createColumn {
@@ -177,22 +200,7 @@ $primaryColor: #b24592;
 .ui.feed {
   overflow: scroll;
 
-  &:hover::-webkit-scrollbar-thumb {
-      background: $primaryColor;
-  }
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(0,0,0,0.05);
-    border-radius: 0;
-  }
+  @include scrollbars;
 
 }
 
