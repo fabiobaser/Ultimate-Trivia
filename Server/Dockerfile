@@ -1,11 +1,8 @@
-﻿FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-env
+﻿# Build compile image including sdk
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build-env
 WORKDIR /app
 
-# Copy csproj and restore as distinct layers
-COPY UltimateTrivia/UltimateTrivia.csproj ./
-RUN dotnet restore
-
-# Copy everything else and build
+# Copy everything and build
 COPY . ./
 RUN dotnet publish UltimateTrivia/UltimateTrivia.csproj -c Release -o out
 
