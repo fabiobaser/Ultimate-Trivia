@@ -5,6 +5,8 @@ COPY package*.json /app/
 RUN npm install
 COPY . ./
 
+RUN mkdir /app/dist
+
 FROM nginx:alpine
 COPY --from=build-env /app/dist /usr/share/nginx.html
 RUN rm /etc/nginx/conf.d/default.conf
