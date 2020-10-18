@@ -16,17 +16,6 @@ export default class LobbyCreateView extends Component {
         }
     }
 
-    handleLobbyJoin = e => {
-        const targetType = e.target.nodeName
-        if (targetType === 'INPUT') return
-
-        const { lobbyId, joinLobby } = this.props
-        if (lobbyId.length === 6) {
-            console.log('Trying to join Lobby: ', lobbyId)
-            joinLobby()
-        }
-    }
-
     handleAvatarOptionChange = (e, targetProps) => {
         const { optiontype, value } = targetProps
         const { updateAvatar, avatar } = this.props
@@ -36,7 +25,7 @@ export default class LobbyCreateView extends Component {
     }
 
     render() {
-        const { lobbyId, createLobby, joinLobby, handleInputChange, updateAvatar, avatar } = this.props
+        const { lobbyId, createLobby, login, handleInputChange, avatar } = this.props
 
         const dropdowns = Object.keys(types).map(type => (
             <Dropdown
@@ -114,8 +103,7 @@ export default class LobbyCreateView extends Component {
                     />
                     <Divider />
                     <Menu pointing secondary style={{ marginTop: '0.9%', border: 'none' }}>
-                        <Menu.Item name='Anmelden' onClick={this.login} />
-                        <Menu.Item name='Registrieren' disabled />
+                        <Menu.Item name='Anmelden' onClick={login} />
                     </Menu>
                 </Grid.Column>
                 <Grid.Column

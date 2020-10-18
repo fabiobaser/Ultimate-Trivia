@@ -7,11 +7,12 @@ import './App.scss'
 import Config from './config'
 import { randomAvatar } from './GameViews/avatarOptions'
 import GameView from './Components/GameView'
+import Granim from 'react-granim'
 
-import store from "./redux/store";
+import store from './redux/store'
 import { signinRedirect } from './Components/api-authentication/services/userService'
-import { fetchRegisteredUser } from "./Components/api-authentication/services/apiService";
-import { loadUserFromStorage } from "./Components/api-authentication/services/userService";
+import { fetchRegisteredUser } from './Components/api-authentication/services/apiService'
+import { loadUserFromStorage } from './Components/api-authentication/services/userService'
 
 export default class App extends Component {
     constructor(props) {
@@ -38,16 +39,15 @@ export default class App extends Component {
     }
 
     async componentDidMount() {
-
         let user = await fetchRegisteredUser()
-        console.log(user)
-        if(user) {
+        console.debug('%coidc User: ', 'color: orange', user)
+        if (user) {
             this.setState({
                 name: user.name ?? this.state.name,
-                avatar: user.avatarJson ? JSON.parse(user.avatarJson) : this.state.avatar
+                avatar: user.avatarJson ? JSON.parse(user.avatarJson) : this.state.avatar,
             })
         }
-        
+
         await this.connectToHub()
         window.rapp = this
     }
@@ -57,7 +57,7 @@ export default class App extends Component {
     }
 
     createGame = () => {
-        this.connection.invoke('StartGame', { rounds: 3, answerDuration: 30 })
+        this.connection.invoke('StartGame', { rounds: 3, answerDuration: 3000 })
     }
 
     createLobby = () => {
@@ -102,10 +102,11 @@ export default class App extends Component {
     }
 
     connectToHub = async () => {
-        
         let user = await loadUserFromStorage(store)
-        
-        this.connection = new HubConnectionBuilder().withUrl(Config.baseURL + '/triviaGameServer', { accessTokenFactory: () => user.access_token }).build()
+
+        this.connection = new HubConnectionBuilder()
+            .withUrl(Config.baseURL + '/triviaGameServer', { accessTokenFactory: () => user.access_token })
+            .build()
         window.connection = this.connection
 
         this.connection.on('broadcastMessage', ({ name, avatarJson }, message) => {
@@ -154,52 +155,82 @@ export default class App extends Component {
             this.setState({ userArray: userLeftEvent.usernames })
         })
 
-        this.connection.on('gameStarted', () => {
-            this.setState({ inGame: true })
+        this.connection.on('gameStarted', gameStartedEvent => {
+            console.debug('%cgameStartedEvent: ', 'color: orange', gameStartedEvent)
+
+            const { points, currentQuestionNr, currentRoundNr, maxQuestionNr, maxRoundNr } = gameStartedEvent
+
+            this.setState({ inGame: true, points, currentQuestionNr, currentRoundNr, maxQuestionNr, maxRoundNr })
         })
 
         this.connection.on('nextRoundStarted', nextRoundStartedEvent => {})
 
-        this.connection.on('categorySelected', ({ username, category }) => {
-            this.pushtToChat('', `${username} hat "${category}" ausgewählt`)
+        this.connection.on('categorySelected', categorySelectedEvent => {
+            console.debug('%ccategorySelectedEvent: ', 'color: orange', categorySelectedEvent)
+
+            const { player, category } = categorySelectedEvent
+            const { name, avatarJson } = player
+
+            this.pushtToChat({ name, avatarJson, system: true }, `${name} hat ${category.content} gewählt`)
         })
 
         this.connection.on('showCategories', showCategoriesEvent => {
-            console.log(
-                `user ${showCategoriesEvent.username} is choosing a category, ${showCategoriesEvent.categories}`
+            console.debug('%cshowCategoriesEvent: ', 'color: orange', showCategoriesEvent)
+
+            const { categories, currentPlayer } = showCategoriesEvent
+
+            this.pushtToChat(
+                { name: currentPlayer.name, avatarJson: currentPlayer.avatarJson, system: true },
+                `${currentPlayer.name} wählt eine Kategorie aus`
             )
 
-            this.pushtToChat('', `${showCategoriesEvent.username} wählt ein Thema aus`)
-
-            if (showCategoriesEvent.username === this.state.name) {
+            if (currentPlayer.name === this.state.name) {
                 this.setState({
-                    topics: showCategoriesEvent.categories,
+                    topics: categories,
                     gameState: 'topicSelect',
                 })
+            } else {
+                this.setState({ question: '', possibleAnswers: [], topics: [], gameState: 'lobby' })
             }
-
-            this.setState({ question: '', possibleAnswers: [] })
         })
 
         this.connection.on('showQuestion', showQuestionEvent => {
-            console.log('Question', showQuestionEvent)
+            console.debug('%cshowQuestionEvent: ', 'color: orange', showQuestionEvent)
+
+            const {
+                answers,
+                question,
+                currentQuestionNr,
+                currentRoundNr,
+                maxQuestionNr,
+                maxRoundNr,
+            } = showQuestionEvent
+
             this.setState({
-                possibleAnswers: showQuestionEvent.answers,
-                question: showQuestionEvent.question,
+                possibleAnswers: answers,
+                question,
+                currentQuestionNr,
+                maxRoundNr,
+                maxQuestionNr,
+                currentRoundNr,
                 gameState: 'question',
             })
         })
 
         // TODO: handle correctly
         this.connection.on('playerAnswered', userAnsweredEvent => {
-            console.log(`${userAnsweredEvent.username} has answered`)
+            console.debug('%cuserAnsweredEvent: ', 'color: orange', userAnsweredEvent)
         })
 
         // TODO: handle correctly
         this.connection.on('highlightCorrectAnswer', highlightCorrectAnswerEvent => {
+            console.debug('%chighlightCorrectAnswer: ', 'color: orange', highlightCorrectAnswerEvent)
+
+            const { answers } = highlightCorrectAnswerEvent
+
             this.setState({
                 gameState: 'questionsResult',
-                results: highlightCorrectAnswerEvent.answers,
+                results: answers,
             })
         })
 
@@ -237,12 +268,12 @@ export default class App extends Component {
     }
 
     handleAnswerSelect = answer => {
-        this.connection.invoke('AnswerSelected', answer)
+        this.connection.invoke('answerSelected', answer)
         //this.setState({ possibleAnswers: [] });
     }
 
     handleTopicSelect = topic => {
-        this.connection.invoke('CategorySelected', topic)
+        this.connection.invoke('categorySelected', topic)
         this.setState({ topics: [] })
     }
 
@@ -277,12 +308,15 @@ export default class App extends Component {
             playerId,
             points,
             avatar,
+            currentQuestionNr,
+            maxQuestionNr,
+            currentRoundNr,
+            maxRoundNr,
         } = this.state
 
         return (
             <div id={'appContainer'} style={{ display: 'flex', flexDirection: 'column' }}>
-                <button onClick={() => this.login()}>Login</button>
-                
+                <Granim id='gradientBackgound'></Granim>
                 <div id={'backdropView'} style={{ flex: 1, background: 'rgba(229, 233, 236, 1.00)' }}>
                     {this.state.gameState === 'initial' && (
                         <LobbyCreateView
@@ -290,10 +324,10 @@ export default class App extends Component {
                             lobbyId={this.state.lobbyId}
                             createLobby={this.createLobby}
                             joinLobby={this.joinLobby}
+                            login={this.login}
                             name={this.state.name}
                             handleInputChange={this.handleInputChange}
                             updateAvatar={this.updateAvatar}
-                            avatar={this.state.avatar}
                         />
                     )}
 
@@ -318,6 +352,10 @@ export default class App extends Component {
                             sendMessage={this.sendMessage}
                             topics={topics}
                             userArray={userArray}
+                            currentQuestionNr={currentQuestionNr}
+                            maxQuestionNr={maxQuestionNr}
+                            currentRoundNr={currentRoundNr}
+                            maxRoundNr={maxRoundNr}
                         />
                     )}
                 </div>

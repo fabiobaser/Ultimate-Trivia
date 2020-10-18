@@ -5,7 +5,7 @@
     "start": "parcel src/index.html --https --cert ../Server/UltimateTrivia/Certificate/localhost.crt --key ../Server/UltimateTrivia/Certificate/localhost.key",
     "marcel": "parcel src/index.html --https --cert ../Server/UltimateTrivia/Certificate/fullchain.pem --key ../Server/UltimateTrivia/Certificate/privkey.pem",
     "server": "dotnet run -p ../Server/UltimateTrivia/UltimateTrivia.csproj",
-	"build": "parcel build src/index.html"
+    "build": "parcel build src/index.html"
   },
   "dependencies": {
     "@microsoft/signalr": "^3.1.8",
@@ -17,6 +17,7 @@
     "prettier": "^2.1.2",
     "react": "^16.14.0",
     "react-dom": "^16.13.1",
+    "react-granim": "^1.1.0",
     "react-redux": "^7.2.1",
     "react-router-dom": "^5.2.0",
     "redux": "^4.0.5",

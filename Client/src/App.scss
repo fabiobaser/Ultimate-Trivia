@@ -1,6 +1,6 @@
 
 
-$primaryColor: #b24592;
+$primaryColor: #55efc4;
 
 @mixin scrollbars {
   &:hover::-webkit-scrollbar-thumb {
@@ -40,7 +40,7 @@ $primaryColor: #b24592;
 #backdropView {
   flex: 1;
   background: rgba(229, 233, 236, 1.00);
-  padding: 2%;
+  padding: 1%;
   max-height: 100%;
   overflow: hidden;
 }
@@ -90,13 +90,14 @@ $primaryColor: #b24592;
 }
 .answer {
   color: black !important;
+  line-height: 50px !important;
 
   &.false {
-    background:rgba(255,0,0,0.2);
+    background: rgba(214, 48, 49,0.1);
   }
 
   &.true {
-    background:rgb(23, 232, 9, 0.1);
+    background: rgba(85, 239, 196,0.1);
   }
 }
 
@@ -124,10 +125,19 @@ $primaryColor: #b24592;
   background: #d6d6d6;
   color: white !important;
   text-transform: uppercase;
+  flex-direction: column;
+  opacity: 1;
+
+  transition: all 0.2s ease-in-out;
 
   &:hover {
-    background: #bababa;
+    background: $primaryColor;
   }
+
+  &.hiddenSubmit {
+    opacity: 0;
+  }
+
 }
 
 .clickToAction {
@@ -137,6 +147,7 @@ $primaryColor: #b24592;
 
 .wide.column {
   max-height: 100% !important;
+  background: white !important;
 }
 
 #joinColumn {
@@ -168,6 +179,7 @@ $primaryColor: #b24592;
 #avatarColumn {
   max-height: 100%;
   overflow: scroll;
+  background: white;
 
   @include scrollbars;
 
@@ -235,5 +247,5 @@ $primaryColor: #b24592;
 }
 
 .ui.selection.list .list>.item.active, .ui.selection.list>.item.active {
-  background: rgb(0, 206, 201) !important;
+  background: rgba(85, 239, 196,1.0) !important;
 }

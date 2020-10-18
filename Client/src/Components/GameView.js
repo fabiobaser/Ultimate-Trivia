@@ -24,7 +24,7 @@ export default class GameView extends Component {
     handleSelect = (entryIndex, entry) => {
         const { gameState } = this.props
         if (gameState === 'questionsResult') return
-        this.setState({ selectedItemIndex: entryIndex, selectedItem: entry })
+        this.setState({ selectedItemIndex: entryIndex, selectedItem: entry.id })
     }
 
     handleSubmit = () => {
@@ -68,6 +68,10 @@ export default class GameView extends Component {
             playerId,
             possibleAnswers,
             results,
+            currentQuestionNr,
+            maxQuestionNr,
+            currentRoundNr,
+            maxRoundNr,
         } = this.props
 
         let questionText = ''
@@ -75,7 +79,7 @@ export default class GameView extends Component {
 
         switch (gameState) {
             case 'topicSelect':
-                selectionArray = topics.map(a => ({ content: a }))
+                selectionArray = topics
                 questionText = 'Bitte wähle eine Kategorie für die nächste Runde aus'
                 break
 
@@ -86,13 +90,14 @@ export default class GameView extends Component {
 
             case 'question':
                 questionText = question
-                selectionArray = possibleAnswers.map(a => ({ content: a }))
+                selectionArray = possibleAnswers
                 break
         }
 
         let userPointsArray = userArray.map(user => ({
-            username: user.name,
-            points: points[user.name] || 0,
+            name: user.name,
+            id: user.id,
+            points: points[user.id] || 0,
             avatar: JSON.parse(user.avatarJson),
         }))
 
@@ -133,7 +138,7 @@ export default class GameView extends Component {
                     <List ordered style={{ flex: 1 }}>
                         {userPointsArray.map((userObj, userIndex) => {
                             return (
-                                <List.Item key={userObj.username}>
+                                <List.Item key={userObj.id}>
                                     <Avatar
                                         style={{ width: '40px', height: '40px' }}
                                         avatarStyle='Circle'
@@ -143,7 +148,7 @@ export default class GameView extends Component {
                                     />
 
                                     <List.Content>
-                                        <List.Header>{userObj.username}</List.Header>
+                                        <List.Header>{userObj.name}</List.Header>
                                         {(userObj.points || 0) * 10} Punkte
                                     </List.Content>
                                 </List.Item>
@@ -205,10 +210,18 @@ export default class GameView extends Component {
                             background: 'rgba(0,0,0,0.05)',
                         }}
                     >
-                        <div id={'questionContainer'}>
-                            <h1 id={'questionNumber'}>Q1</h1>
-                            <p id={'question'}>{questionText}</p>
+                        <div id={'questionContainer'} style={{ display: 'flex', flexDirection: 'row' }}>
+                            <Button.Group>
+                                <Button basic color='grey'>
+                                    R: {currentRoundNr} / {maxRoundNr}
+                                </Button>
+                                <Button basic color='grey'>
+                                    F: {currentQuestionNr} / {maxQuestionNr}
+                                </Button>
+                                <Button color='grey'>30s</Button>
+                            </Button.Group>
                         </div>
+                        <p id={'question'}>{questionText}</p>
                         <div id={'answersContainer'}>
                             <List
                                 selection={gameState !== 'questionsResult'}
@@ -219,22 +232,29 @@ export default class GameView extends Component {
                                 {selectionArray.map((entry, entryIndex) => {
                                     return (
                                         <Answer
-                                            key={entryIndex}
+                                            key={entry.id}
                                             active={entryIndex === this.state.selectedItemIndex}
                                             char={abc[entryIndex]}
                                             answer={entry.content}
                                             isResult={gameState === 'questionsResult'}
                                             correct={entry.correct || false}
                                             selectedBy={entry.selectedBy || []}
-                                            clickHandler={() => this.handleSelect(entryIndex, entry.content)}
+                                            clickHandler={() => this.handleSelect(entryIndex, entry)}
                                         />
                                     )
                                 })}
-                                {gameState !== 'questionsResult' && (
-                                    <List.Item id={'answerSubmitButton'} onClick={this.handleSubmit}>
-                                        {gameState === 'topicSelect' ? 'Auswählen' : 'Beantworten'}
-                                    </List.Item>
-                                )}
+
+                                <List.Item
+                                    id={'answerSubmitButton'}
+                                    onClick={this.handleSubmit}
+                                    className={
+                                        gameState !== 'questionsResult' && selectionArray.length > 0
+                                            ? ''
+                                            : 'hiddenSubmit'
+                                    }
+                                >
+                                    {gameState === 'topicSelect' ? 'Auswählen' : 'Beantworten'}
+                                </List.Item>
                             </List>
                         </div>
                     </div>
@@ -252,9 +272,14 @@ const Answer = ({ char, answer, active, clickHandler, isResult, correct, selecte
     }
 
     const selBy = selectedBy.map(user => (
-        <Label key={user} basic size={'mini'}>
-            {user}
-        </Label>
+        <Avatar
+            key={user.id}
+            style={{ width: '35px', height: '35px', marginTop: '0.6rem', marginLeft: '1rem' }}
+            avatarStyle='Circle'
+            eyebrowType='Default'
+            mouthType='Default'
+            {...JSON.parse(user.avatarJson)}
+        />
     ))
 
     return (
