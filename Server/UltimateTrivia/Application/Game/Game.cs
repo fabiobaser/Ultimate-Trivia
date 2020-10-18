@@ -292,7 +292,7 @@ namespace UltimateTrivia.Application.Game
                         Content = a.Content,
                         Id = a.Id,
                         Correct = a.IsCorrect,
-                        SelectedBy = _gameState.CurrentPlayerAnswers.Where(pa => pa.Answer.IsCorrect).Select(pa => pa.Player).ToList()
+                        SelectedBy = _gameState.CurrentPlayerAnswers.Where(pa => pa.Answer.Id == a.Id).Select(pa => pa.Player).ToList()
                     }).ToList()
                 }, cancellationToken: ct);
 
