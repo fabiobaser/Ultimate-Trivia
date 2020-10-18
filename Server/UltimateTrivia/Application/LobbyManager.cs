@@ -137,7 +137,7 @@ namespace UltimateTrivia.Application
             var leftLobbyId = player.LobbyId;
             _playerManager.LeaveLobby(connectionId);
             
-            var lobby = Lobbies[player.LobbyId];
+            var lobby = Lobbies[leftLobbyId];
             if (lobby.GameId != null && _gameManager.IsGameInProgress(lobby.GameId))
             {
                 _gameManager.PassEventToGame(lobby.GameId, Game.Game.EGameEvent.PlayerLeft, new PlayerLeftData
