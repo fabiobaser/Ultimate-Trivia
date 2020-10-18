@@ -1,6 +1,7 @@
 FROM node:alpine as build-env
 WORKDIR /app
 
+RUN touch docker-entrypoint.sh
 RUN chmod +x docker-entrypoint.sh
 
 COPY package*.json /app/
