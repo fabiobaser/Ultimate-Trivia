@@ -140,7 +140,7 @@ namespace UltimateTrivia.Application.Game
             _gameState = new GameState
             {
                 CurrentRoundNr = 1,
-                CurrentQuestionNr = 1,
+                CurrentQuestionNr = 0,
                 MaxRounds = gameStartedData.Rounds,
             };
 
