@@ -129,3 +129,16 @@ export const get = type => {
 export const rand = type => {
     return Object.keys(types[type])[_.random(0, Object.keys(types[type]).length - 1)]
 }
+
+export const randomAvatar = () => {
+    return {
+        topType: rand('topType'),
+        accessoriesType: rand('accessoriesType'),
+        hatColor: rand('hatColor'),
+        facialHairType: rand('facialHairType'),
+        facialHairColor: rand('facialHairColor'),
+        clotheType: rand('clotheType'),
+        eyeType: rand('eyeType'),
+        skinColor: rand('skinColor'),
+    }
+}

@@ -5,7 +5,7 @@ import faker from 'faker'
 import LobbyCreateView from './GameViews/LobbyCreateView'
 import './App.scss'
 import Config from './config'
-
+import { randomAvatar } from './GameViews/avatarOptions'
 import GameView from './Components/GameView'
 
 import { signinRedirect } from './Components/api-authentication/services/userService'
@@ -33,6 +33,7 @@ export default class App extends Component {
             question: '',
             points: {},
             results: [],
+            avatar: randomAvatar(),
         }
     }
 
@@ -272,6 +273,7 @@ export default class App extends Component {
             lobbyCreator,
             playerId,
             points,
+            avatar,
         } = this.state
 
         return (
@@ -281,6 +283,7 @@ export default class App extends Component {
                 <div id={'backdropView'} style={{ flex: 1, background: 'rgba(229, 233, 236, 1.00)' }}>
                     {this.state.gameState === 'initial' && (
                         <LobbyCreateView
+                            avatar={avatar}
                             lobbyId={this.state.lobbyId}
                             createLobby={this.createLobby}
                             joinLobby={this.joinLobby}

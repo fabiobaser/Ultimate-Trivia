@@ -2,17 +2,9 @@ import React, { Component } from 'react'
 import { Input, Grid, Dropdown, Button, Menu, Divider, Icon } from 'semantic-ui-react'
 import Avatar from 'avataaars'
 
-import { get, types, rand } from './avatarOptions'
+import { get, types } from './avatarOptions'
 
 export default class LobbyCreateView extends Component {
-    constructor(props) {
-        super(props)
-
-        this.state = {
-            avatar: this.randomAvatar(),
-        }
-    }
-
     handleLobbyJoin = e => {
         const targetType = e.target.nodeName
         if (targetType === 'INPUT') return
@@ -24,42 +16,26 @@ export default class LobbyCreateView extends Component {
         }
     }
 
-    handleAvatarOptionChange = (e, props) => {
-        const { optiontype, value } = props
-        const avatar = this.state.avatar
-        avatar[optiontype] = value
-        this.setState({ avatar }, () => {
-            const { updateAvatar } = this.props
-            updateAvatar(this.state.avatar)
-        })
-    }
+    handleAvatarOptionChange = (e, targetProps) => {
+        const { optiontype, value } = targetProps
+        const { updateAvatar, avatar } = this.props
 
-    randomAvatar = () => {
-        const avatar = {
-            topType: rand('topType'),
-            accessoriesType: rand('accessoriesType'),
-            hatColor: rand('hatColor'),
-            facialHairType: rand('facialHairType'),
-            facialHairColor: rand('facialHairColor'),
-            clotheType: rand('clotheType'),
-            eyeType: rand('eyeType'),
-            skinColor: rand('skinColor'),
-        }
-        this.props.updateAvatar(avatar)
-        return avatar
+        avatar[optiontype] = value
+        updateAvatar(avatar)
     }
 
     render() {
-        const { lobbyId, createLobby, joinLobby, handleInputChange, updateAvatar } = this.props
+        const { lobbyId, createLobby, joinLobby, handleInputChange, updateAvatar, avatar } = this.props
 
         const dropdowns = Object.keys(types).map(type => (
             <Dropdown
                 key={type}
-                value={this.state.avatar[type]}
+                value={avatar[type]}
                 optiontype={type}
                 options={get(type)}
                 onChange={this.handleAvatarOptionChange}
                 selection
+                search
                 size={'mini'}
                 style={{
                     width: '50%',
@@ -95,14 +71,14 @@ export default class LobbyCreateView extends Component {
                         avatarStyle='Transparent'
                         mouthType='Default'
                         eyebrowType='Default'
-                        topType={this.state.avatar['topType']}
-                        accessoriesType={this.state.avatar['accessoriesType']}
-                        hatColor={this.state.avatar['hatColor']}
-                        facialHairType={this.state.avatar['facialHairType']}
-                        facialHairColor={this.state.avatar['facialHairColor']}
-                        clotheType={this.state.avatar['clotheType']}
-                        eyeType={this.state.avatar['eyeType']}
-                        skinColor={this.state.avatar['skinColor']}
+                        topType={avatar['topType']}
+                        accessoriesType={avatar['accessoriesType']}
+                        hatColor={avatar['hatColor']}
+                        facialHairType={avatar['facialHairType']}
+                        facialHairColor={avatar['facialHairColor']}
+                        clotheType={avatar['clotheType']}
+                        eyeType={avatar['eyeType']}
+                        skinColor={avatar['skinColor']}
                         style={{ marginBottom: '-1.4rem' }}
                     />
                     <Divider />
