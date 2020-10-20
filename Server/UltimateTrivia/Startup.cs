@@ -18,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -226,10 +227,13 @@ namespace UltimateTrivia
             // TODO: HACK: provide bearer token from query - websocket cant set auth header - change to JwtBearerEvents
             app.Use(async (context, next) =>
             {
+                var logger = context.RequestServices.GetService<ILogger<Startup>>();
+                
                 var token = context.Request.Query["access_token"].FirstOrDefault();
                 var path = context.Request.Path;
                 if (!string.IsNullOrWhiteSpace(token) && path.StartsWithSegments("/triviaGameServer"))
                 {
+                    logger.LogInformation("detected bearer token in query - moved to header");
                     context.Request.Headers.Add("Authorization", "Bearer " + token);
                 }
 

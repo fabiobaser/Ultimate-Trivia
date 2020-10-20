@@ -33,13 +33,12 @@ namespace UltimateTrivia.Database.Game
             modelBuilder.Entity<Question>()
                 .Property(q => q.Type)
                 .HasConversion<string>();
-
+            
             modelBuilder.Entity<Question>()
                 .HasMany(q => q.Answers)
                 .WithOne(q => q.Question)
-                .HasForeignKey(a => a.QuestionId);
-
-            
+                .HasForeignKey(a => a.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
             
             base.OnModelCreating(modelBuilder);
         }

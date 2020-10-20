@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +23,10 @@ namespace UltimateTrivia.OpenApi
             {
                 options.SwaggerDoc(description.GroupName, CreateInfoForApiVersion(description));
             }
+            
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            options.IncludeXmlComments(xmlPath);
             
             // options.AddSecurityDefinition("oauth2 localhost", new OpenApiSecurityScheme
             // {
